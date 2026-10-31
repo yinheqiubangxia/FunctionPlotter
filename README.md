@@ -81,12 +81,20 @@ kotlinc <math 文件> <smoke test> -include-runtime -d math.jar && java -jar mat
 | DeepSeek（深度求索） | `https://api.deepseek.com` | `deepseek-chat` |
 | Kimi（月之暗面 Moonshot） | `https://api.moonshot.cn` | `moonshot-v1-8k` |
 | 小米 MiMo | `https://api.xiaomimimo.com/v1` | `mimo-v2.6-flash` |
-| 自定义 | 任意 OpenAI 兼容端点 | 自填 |
+| 智谱 GLM（Zhipu AI） | `https://open.bigmodel.cn/api/paas/v4` | `glm-4-flash` |
+| 自定义 | 任意 OpenAI 兼容端点（如本地 Ollama） | 自填 |
 
-> Windows 版：API Key 按厂商分别保存在 Windows 密码保险柜（PasswordVault）中。
+> Windows 版：API Key 按厂商分别保存在本机配置文件（%APPDATA%\\FunctionPlotter\\settings.json）中，模型切换在输入栏右侧下拉框完成。
 > Android 版：API Key 仅存储在本机 DataStore，不上传任何第三方。
 
-新增厂商只需在 WinUI 项目 `FunctionPlotter.Core/Ai/LLMProvider.cs` 或 Android 项目 `AiProviders.kt` 里加一条预设即可。
+新增厂商只需在 `FunctionPlotter.Core/Ai/LLMProvider.cs`（Windows / 浏览器共用）或 Android 项目 `AiProviders.kt` 里加一条预设即可。
+
+## 🖨️ 打印（WinUI 3 桌面版）
+
+「更多」菜单 →「打印图像…」调起系统打印对话框（默认横向）。
+打印页 = 页眉（`f(x) = 表达式`）+ 与屏幕一致的图像区：打印内容直接克隆屏幕上的 `PlotView`
+（同表达式、同视口、同一套采样与绘制代码），不经过位图截图，矢量输出清晰不糊。
+桌面应用通过 `IPrintManagerInterop`（printmanagerinterop.h）按窗口句柄接入系统打印。
 
 ## ⌨️ 交互一览
 

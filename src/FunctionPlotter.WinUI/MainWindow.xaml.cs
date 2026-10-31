@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Windows.Graphics;
 
 namespace FunctionPlotter.WinUI
 {
@@ -45,7 +46,7 @@ namespace FunctionPlotter.WinUI
         {
             // 按当前缩放比例把小窗口摆好（AppWindow 用的是物理像素）
             double scale = RootGrid.XamlRoot?.RasterizationScale ?? 1.0;
-            AppWindow.Resize(new Windows.Graphics.SizeInt32((int)Math.Round(620 * scale), (int)Math.Round(560 * scale)));
+            AppWindow.Resize(new SizeInt32((int)Math.Round(620 * scale), (int)Math.Round(560 * scale)));
 
             FunctionBox.Focus(FocusState.Programmatic);
             FunctionBox.SelectAll();

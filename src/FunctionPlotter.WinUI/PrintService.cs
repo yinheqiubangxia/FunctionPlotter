@@ -205,4 +205,9 @@ namespace FunctionPlotter.WinUI
                 Child = plot,
             };
             Grid.SetRow(frame, 1);
-            root.Children.Add(
+            root.Children.Add(frame);
+
+            return root;
+        }
+    }
+}
