@@ -1,0 +1,15 @@
+<Project>
+  <!--
+    WinUI 3 的 PRI 资源生成任务（Microsoft.Build.Packaging.Pri.Tasks.dll）只随
+    Visual Studio 分发，不在 .NET SDK 里。当能定位到 Visual Studio 安装目录时，
+    把 Appx 打包工具路径指过去；VS IDE 构建不受影响（该属性通常已由 VS 自行设定）。
+  -->
+  <PropertyGroup Condition="'$(AppxMSBuildToolsPath)' == '' AND '$(VsInstallRoot)' != '' AND Exists('$(VsInstallRoot)\MSBuild\Microsoft\VisualStudio\v$(VisualStudioVersion)\AppxPackage\Microsoft.Build.Packaging.Pri.Tasks.dll')">
+    <AppxMSBuildToolsPath>$(VsInstallRoot)\MSBuild\Microsoft\VisualStudio\v$(VisualStudioVersion)\AppxPackage\</AppxMSBuildToolsPath>
+  </PropertyGroup>
+
+  <!-- build.ps1 会通过 vswhere 设置 VSINSTALLDIR 环境变量，供 dotnet CLI 构建使用 -->
+  <PropertyGroup Condition="'$(AppxMSBuildToolsPath)' == '' AND '$(VSINSTALLDIR)' != '' AND Exists('$(VSINSTALLDIR)MSBuild\Microsoft\VisualStudio\v$(VisualStudioVersion)\AppxPackage\Microsoft.Build.Packaging.Pri.Tasks.dll')">
+    <AppxMSBuildToolsPath>$(VSINSTALLDIR)MSBuild\Microsoft\VisualStudio\v$(VisualStudioVersion)\AppxPackage\</AppxMSBuildToolsPath>
+  </PropertyGroup>
+</Project>

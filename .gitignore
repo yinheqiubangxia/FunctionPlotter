@@ -1,0 +1,46 @@
+# ===== 构建产物 =====
+[Bb]in/
+[Oo]bj/
+[Pp]ublish/
+AppPackages/
+out/
+bld/
+
+# ===== Visual Studio =====
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.pidb
+*.log
+
+# ===== Rider / VS Code =====
+.idea/
+.vscode/
+*.swp
+
+# ===== NuGet =====
+*.nupkg
+packages/
+project.lock.json
+
+# ===== 测试结果 =====
+[Tt]est[Rr]esult*/
+TestResult.xml
+coverage/
+
+# ===== Windows =====
+Thumbs.db
+Desktop.ini
+*.aps
+
+# ===== 应用包 =====
+*.appx
+*.msix
+*.appxbundle
+*.msixbundle
+*.appxupload
+*.msixupload
+*.cer
+*.pfx
