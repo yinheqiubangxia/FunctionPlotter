@@ -22,9 +22,8 @@ namespace FunctionPlotter.UWP
         protected override void OnLaunched(LaunchActivatedEventArgs e)
         {
             // 桌面端启动时把窗口设成设计尺寸（UWP 的窗口初始大小）
-            ApplicationView view = ApplicationView.GetForCurrentView();
-            view.PreferredLaunchViewSize = new Size(620, 520);
-            view.PreferredLaunchWindowingMode = ApplicationViewWindowingMode.PreferredLaunchViewSize;
+            ApplicationView.PreferredLaunchViewSize = new Size(620, 520);
+            ApplicationView.PreferredLaunchWindowingMode = ApplicationViewWindowingMode.PreferredLaunchViewSize;
 
             _rootFrame = Window.Current.Content as Frame;
 

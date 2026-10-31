@@ -1,0 +1,31 @@
+{
+  "app": {
+    "appId": 0,
+    "appName": "函数绘图器",
+    "appType": "app",
+    "version": {
+      "code": 1,
+      "name": "1.0.0"
+    },
+    "icon": "icon.png",
+    "vender": "yinheqiubangxia",
+    "description": "手环函数绘图器：输入 sin(x) / x^2+1 等表达式，拖拽平移、双指缩放查看曲线。",
+    "permissions": []
+  },
+  "targets": {
+    "default": {
+      "designWidth": 194,
+      "designHeight": 368
+    }
+  },
+  "platforms": [
+    {
+      "st": "b"
+    }
+  ],
+  "page": {
+    "pages": [
+      "page/index"
+    ]
+  }
+}

@@ -45,10 +45,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="AiSettings.cs" />
     <Compile Include="App.xaml.cs" />
     <Compile Include="MainPage.xaml.cs" />
     <Compile Include="PlotView.cs" />
     <Compile Include="Palette.cs" />
+    <Compile Include="PrintService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
 

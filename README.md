@@ -22,6 +22,8 @@
 - **表达式覆盖面广**：四则运算、隐式乘法（`2x`、`(x+1)(x-1)`）、三角 / 双曲 / 指数对数、绝对值 `|x|`、常量 `pi` `e` `tau` `phi`，输入容错（全角括号、`×` `÷` 自动纠正，`f(x) =` 前缀自动忽略）
 - **健壮的曲线处理**：`tan(x)`、`1/x` 在渐近线处正确断开，不多画竖线；自适应 Y 轴用分位数而非 min/max，单个尖峰不会把曲线压扁
 - **所见即所得的交互**：滚轮以光标为中心缩放、拖动平移、双击适配、十字光标实时读数
+- **AI 自然语言绘图（UWP 版）**：输入「绘制 y=sin(x) 在 -2π 到 2π 的图像」这样的人话，AI 自动转成表达式并画好；内置 **DeepSeek**、**Kimi（月之暗面）**、**小米 MiMo**、**智谱 GLM** 四家国产大模型预设，全部走 OpenAI 兼容接口，下拉即切换，也可填自定义端点（如本地 Ollama）；API Key 存进 Windows 密码保险柜，不落明文
+- **打印支持（UWP 版）**：调起系统打印对话框，打印页与屏幕共用同一套绘制管线（同表达式、同视口、同配色），所见即所得
 - **一套算法，三个壳**：核心在 `FunctionPlotter.Core`（纯 .NET 类库，零 UI 依赖），WinUI 3 / UWP / 浏览器三个前端共用
 
 ## 🚀 快速开始
@@ -59,6 +61,33 @@ dotnet run --project tests     # 输出 "通过 63 项，失败 0 项"
 ```
 
 覆盖表达式解析（运算优先级 / 隐式乘法 / 错误定位）、采样与渐近线断点、自适应 Y 轴、坐标换算、刻度生成等。
+
+## 🤖 AI 自然语言绘图（UWP 版）
+
+在函数输入框下方的 AI 栏里直接用自然语言描述，回车或点「AI 绘制」即可：
+
+- 「绘制 y=sin(x) 在 -2π 到 2π 的图像」
+- 「画一个开口向上的抛物线，顶点在 (0, -4)」
+- 「高斯函数 exp(-x^2)，x 从 -3 到 3」
+
+工作方式：自然语言 → 大模型输出严格 JSON（表达式 + 可选 X 范围）→ 用内置 `ExpressionCompiler` 做合法性校验（模型瞎编语法会被拦下）→ 填回输入框触发实时重绘。
+
+**内置模型预设**（均为 OpenAI 兼容接口，点 ⚙ 填对应 API Key，可在设置里改模型名）：
+
+| 厂商 | 接口地址 | 默认模型 |
+|---|---|---|
+| DeepSeek（深度求索） | `https://api.deepseek.com` | `deepseek-chat` |
+| Kimi（月之暗面 Moonshot） | `https://api.moonshot.cn` | `moonshot-v1-8k` |
+| 小米 MiMo | `https://api.xiaomimimo.com` | `mimo-v2-flash` |
+| 智谱 GLM（Zhipu AI） | `https://open.bigmodel.cn/api/paas/v4` | `glm-4-flash` |
+| 自定义 | 任意 OpenAI 兼容端点（如 `http://localhost:11434/v1`） | 自填 |
+
+> API Key 按厂商分别保存在 Windows 密码保险柜（PasswordVault）中；新增厂商只需在 `FunctionPlotter.Core/Ai/LLMProvider.cs` 里加一条预设。
+
+## 🖨️ 打印（UWP 版）
+
+「更多」菜单 →「打印图像…」调起系统打印对话框（默认横向）。打印页 = 页眉（`f(x) = 表达式`）+ 与屏幕一致的图像区：
+打印内容直接克隆屏幕上的 `PlotView`（同表达式、同视口、同一套采样与绘制代码），不经过位图截图，矢量输出清晰不糊。
 
 ## ⌨️ 交互一览
 
@@ -101,8 +130,9 @@ FunctionPlotter/
 │  └─ index.html                    浏览器预览版（同一套算法）
 ├─ src/
 │  ├─ FunctionPlotter.Core/         纯 .NET 类库（表达式解析 / 采样 / 坐标换算）
+│  │   └─ Ai/                       AI 层：LLMProvider 预设、AiPlotService（OpenAI 兼容调用）、MiniJson
 │  ├─ FunctionPlotter.WinUI/        WinUI 3 应用（Windows App SDK）
-│  └─ FunctionPlotter.UWP/          UWP 应用（Windows.UI.Xaml）
+│  └─ FunctionPlotter.UWP/          UWP 应用（Windows.UI.Xaml，含 AI 绘图与打印）
 └─ tests/                           63 项核心自检（跨平台）
 ```
 
