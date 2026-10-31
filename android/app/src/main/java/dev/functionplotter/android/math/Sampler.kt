@@ -96,10 +96,11 @@ object Sampler {
         val exp = kotlin.math.floor(kotlin.math.log10(rawStep))
         val base = Math.pow(10.0, exp)
         val f = rawStep / base
+        // 向上取到 1/2/5，保证网格间距不小于目标值（不会过密）
         return when {
-            f < 1.5 -> 1.0 * base
-            f < 3.5 -> 2.0 * base
-            f < 7.5 -> 5.0 * base
+            f <= 1.0 -> 1.0 * base
+            f <= 2.0 -> 2.0 * base
+            f <= 5.0 -> 5.0 * base
             else -> 10.0 * base
         }
     }

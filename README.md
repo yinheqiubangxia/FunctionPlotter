@@ -7,12 +7,13 @@
 
 **输入一个关于 `x` 的表达式，小窗口里立刻画出曲线。**
 
-原生 Windows 桌面应用，同一套核心算法提供 **WinUI 3** 与 **UWP** 两个版本，另附零依赖的浏览器预览页。
-纯 XAML 矢量绘制，**不依赖 Win2D**；深色 / 浅色主题自动跟随系统。
+同一套核心算法覆盖 **Windows 桌面（WinUI 3）** 与 **Android（Jetpack Compose）** 两个平台，另附零依赖的浏览器预览页。
+Windows 桌面版纯 XAML 矢量绘制（**不依赖 Win2D**），Android 版纯 Compose Canvas 矢量绘制；深色 / 浅色主题自动跟随系统。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-![Platform](https://img.shields.io/badge/platform-Windows%2010%201809%2B-lightgrey)
+![Platform](https://img.shields.io/badge/platform-Windows%2010%201809%2B%20%7C%20Android%208.0%2B-lightgrey)
 ![.NET](https://img.shields.io/badge/.NET-8.0-512BD4)
+![Kotlin](https://img.shields.io/badge/Kotlin-2.0-7F52FF)
 
 ---
 
@@ -21,12 +22,25 @@
 - **实时重绘**：每次按键都重新「解析 → 采样 → 绘制」，小窗口一帧仅 1~2 千次求值，毫秒级完成，不做防抖也不掉帧
 - **表达式覆盖面广**：四则运算、隐式乘法（`2x`、`(x+1)(x-1)`）、三角 / 双曲 / 指数对数、绝对值 `|x|`、常量 `pi` `e` `tau` `phi`，输入容错（全角括号、`×` `÷` 自动纠正，`f(x) =` 前缀自动忽略）
 - **健壮的曲线处理**：`tan(x)`、`1/x` 在渐近线处正确断开，不多画竖线；自适应 Y 轴用分位数而非 min/max，单个尖峰不会把曲线压扁
-- **所见即所得的交互**：滚轮以光标为中心缩放、拖动平移、双击适配、十字光标实时读数
-- **AI 自然语言绘图（UWP 版）**：输入「绘制 y=sin(x) 在 -2π 到 2π 的图像」这样的人话，AI 自动转成表达式并画好；内置 **DeepSeek**、**Kimi（月之暗面）**、**小米 MiMo**、**智谱 GLM** 四家国产大模型预设，全部走 OpenAI 兼容接口，下拉即切换，也可填自定义端点（如本地 Ollama）；API Key 存进 Windows 密码保险柜，不落明文
-- **打印支持（UWP 版）**：调起系统打印对话框，打印页与屏幕共用同一套绘制管线（同表达式、同视口、同配色），所见即所得
-- **一套算法，三个壳**：核心在 `FunctionPlotter.Core`（纯 .NET 类库，零 UI 依赖），WinUI 3 / UWP / 浏览器三个前端共用
+- **所见即所得的交互**：滚轮 / 双指以光标为中心缩放、拖动平移、双击适配、十字光标实时读数
+- **AI 自然语言绘图**：输入「绘制 y=sin(x) 在 -2π 到 2π 的图像」这样的人话，AI 自动转成表达式并画好；预设 **DeepSeek**、**Kimi（月之暗面）**、**小米 MiMo** 三家国产大模型，全部走 OpenAI 兼容接口，可填任意自定义端点
+- **多曲线叠加**（Android 版）：同时画多条函数，自动配色
+- **一套算法，三个壳**：核心在 `FunctionPlotter.Core`（纯 .NET 类库，零 UI 依赖） / `math/` (纯 Kotlin，零 Android 依赖)，WinUI 3 / Android / 浏览器三个前端共用
 
 ## 🚀 快速开始
+
+### Android 版（Kotlin + Jetpack Compose）
+
+见 [`android/`](android/)：Material Design 3 动态配色、预测式返回手势、多曲线叠加、
+AI 辅助绘图（DeepSeek / Kimi / MiMo 预设），数学引擎已通过 36 项冒烟测试。
+
+```bash
+cd android
+./gradlew assembleDebug    # 产物：android/app/build/outputs/apk/debug/app-debug.apk
+./gradlew assembleRelease  # 产物：android/app/build/outputs/apk/release/app-release-unsigned.apk（需自签名）
+```
+
+> ≥ Android Studio Ladybug，JDK 17，Android SDK 35。
 
 ### 0. 浏览器预览（什么都不用装）
 
@@ -46,60 +60,44 @@ cd FunctionPlotter
 产物在 `publish\x64\FunctionPlotter.exe`。工程已配置自包含（`WindowsAppSDKSelfContained` + `SelfContained`），
 **目标机不需要装 .NET 运行时，也不需要 Windows App Runtime**——把 `publish\x64` 整个目录拷走，双击即用。
 
-### 2. UWP 版
-
-前置：Visual Studio 安装「通用 Windows 平台开发」工作负载 + Windows 10 SDK。
-
-- 打开 `FunctionPlotter.sln`，右键 `FunctionPlotter.UWP` → 设为启动项目 → **F5**；
-- 或在项目目录运行 `.\build-uwp.ps1`（脚本自动定位 VS 的构建引擎），随后按提示注册：
-  `Add-AppxPackage -Register <AppxManifest.xml 路径>`（需开启开发者模式）。
-
-### 3. 跑测试（63 项核心自检）
+### 2. 跑测试（63 项核心自检 + 36 项 Android 数学引擎冒烟）
 
 ```bash
-dotnet run --project tests     # 输出 "通过 63 项，失败 0 项"
+dotnet run --project tests                                # Windows/.NET 版
+kotlinc <math 文件> <smoke test> -include-runtime -d math.jar && java -jar math.jar  # Android 版
 ```
 
 覆盖表达式解析（运算优先级 / 隐式乘法 / 错误定位）、采样与渐近线断点、自适应 Y 轴、坐标换算、刻度生成等。
 
-## 🤖 AI 自然语言绘图（UWP 版）
+## 🤖 AI 自然语言绘图
 
-在函数输入框下方的 AI 栏里直接用自然语言描述，回车或点「AI 绘制」即可：
+输入：「绘制 y=sin(x) 在 -2π 到 2π 的图像」「画一个开口向上的抛物线，顶点在 (0, -4)」「高斯函数 exp(-x^2)」
+工作方式：自然语言 → 大模型输出严格 JSON → 内置编译器做合法性校验（模型瞎编语法会被拦下）→ 实时重绘。
 
-- 「绘制 y=sin(x) 在 -2π 到 2π 的图像」
-- 「画一个开口向上的抛物线，顶点在 (0, -4)」
-- 「高斯函数 exp(-x^2)，x 从 -3 到 3」
-
-工作方式：自然语言 → 大模型输出严格 JSON（表达式 + 可选 X 范围）→ 用内置 `ExpressionCompiler` 做合法性校验（模型瞎编语法会被拦下）→ 填回输入框触发实时重绘。
-
-**内置模型预设**（均为 OpenAI 兼容接口，点 ⚙ 填对应 API Key，可在设置里改模型名）：
+**内置厂商预设**（均为 OpenAI 兼容接口，填对应 API Key 即可，可在设置里改模型名）：
 
 | 厂商 | 接口地址 | 默认模型 |
 |---|---|---|
 | DeepSeek（深度求索） | `https://api.deepseek.com` | `deepseek-chat` |
 | Kimi（月之暗面 Moonshot） | `https://api.moonshot.cn` | `moonshot-v1-8k` |
-| 小米 MiMo | `https://api.xiaomimimo.com` | `mimo-v2-flash` |
-| 智谱 GLM（Zhipu AI） | `https://open.bigmodel.cn/api/paas/v4` | `glm-4-flash` |
-| 自定义 | 任意 OpenAI 兼容端点（如 `http://localhost:11434/v1`） | 自填 |
+| 小米 MiMo | `https://api.xiaomimimo.com/v1` | `mimo-v2.6-flash` |
+| 自定义 | 任意 OpenAI 兼容端点 | 自填 |
 
-> API Key 按厂商分别保存在 Windows 密码保险柜（PasswordVault）中；新增厂商只需在 `FunctionPlotter.Core/Ai/LLMProvider.cs` 里加一条预设。
+> Windows 版：API Key 按厂商分别保存在 Windows 密码保险柜（PasswordVault）中。
+> Android 版：API Key 仅存储在本机 DataStore，不上传任何第三方。
 
-## 🖨️ 打印（UWP 版）
-
-「更多」菜单 →「打印图像…」调起系统打印对话框（默认横向）。打印页 = 页眉（`f(x) = 表达式`）+ 与屏幕一致的图像区：
-打印内容直接克隆屏幕上的 `PlotView`（同表达式、同视口、同一套采样与绘制代码），不经过位图截图，矢量输出清晰不糊。
+新增厂商只需在 WinUI 项目 `FunctionPlotter.Core/Ai/LLMProvider.cs` 或 Android 项目 `AiProviders.kt` 里加一条预设即可。
 
 ## ⌨️ 交互一览
 
 | 操作 | 效果 |
 |---|---|
 | 输入框逐字符输入 | 实时重绘 |
-| 鼠标滚轮 | 以光标为中心缩放 |
-| 按住左键拖动 | 平移 |
-| 双击画布 / `Ctrl+F` / 「适配」按钮 | 按当前 X 范围自动适配 Y 轴 |
-| `Ctrl + 加号` / `Ctrl + 减号` | 缩放 |
-| `Ctrl+R` | 重置到 x ∈ [-10, 10] |
-| 移动鼠标 | 十字光标 + 读数（x 与 f(x)） |
+| 鼠标滚轮 / 双指捏合 | 以光标 / 双指中心为锚点缩放 |
+| 按住左键 / 单指拖动 | 平移 |
+| 双击画布 / 「适配」按钮 | 自动适配 Y 轴 |
+| `Ctrl+R` / 工具栏「复位」 | 重置到 x ∈ [-10, 10] |
+| 移动鼠标（WinUI） | 十字光标 + 读数（x 与 f(x)） |
 
 ## 📐 表达式语法
 
@@ -115,24 +113,32 @@ dotnet run --project tests     # 输出 "通过 63 项，失败 0 项"
 | 常量 | `pi` `π` `e` `tau` `phi` |
 | 容错 | 自动忽略 `y =` / `f(x) =` 前缀；全角括号、`×` `÷` `−` 自动纠正 |
 
-输错时给出可读提示并定位，例如 `sin(` → “表达式不完整”，`sinn(x)` → “未知的函数…（是不是 sin？）”。
+输错时给出可读提示并定位，例如 `sin(` → "表达式不完整"，`sinn(x)` → "未知的函数…（是不是 sin？）"。
 
 ## 📁 目录结构
 
 ```
 FunctionPlotter/
-├─ FunctionPlotter.sln
+├─ FunctionPlotter.sln              .NET 解决方案
 ├─ build.ps1                        一键构建 WinUI 3 版（Windows）
-├─ build-uwp.ps1                    一键构建 UWP 版（Windows）
 ├─ Directory.Build.props            dotnet CLI 构建时的 VS 打包任务定位
+├─ android/                         Kotlin + Jetpack Compose Android 版
+│  ├─ build.gradle.kts / settings.gradle.kts
+│  └─ app/src/main/java/dev/functionplotter/android/
+│     ├─ math/                      纯 Kotlin 表达式解析与采样（零 Android 依赖）
+│     ├─ plot/                      ViewModel + Compose Canvas + 手势
+│     ├─ ai/                        OpenAI 兼容客户端 + DeepSeek/Kimi/MiMo 预设
+│     ├─ ui/theme/                  Material 3 动态配色
+│     └─ MainActivity.kt            单 Activity 入口
 ├─ docs/                            截图
 ├─ preview/
 │  └─ index.html                    浏览器预览版（同一套算法）
+├─ rpk/                             Zepp OS 小米手环版（独立 JS 工程）
+├─ vela-apps/                       Vela 快应用三件套（绘图器/番茄钟/换算器，独立 JS 工程）
 ├─ src/
 │  ├─ FunctionPlotter.Core/         纯 .NET 类库（表达式解析 / 采样 / 坐标换算）
 │  │   └─ Ai/                       AI 层：LLMProvider 预设、AiPlotService（OpenAI 兼容调用）、MiniJson
-│  ├─ FunctionPlotter.WinUI/        WinUI 3 应用（Windows App SDK）
-│  └─ FunctionPlotter.UWP/          UWP 应用（Windows.UI.Xaml，含 AI 绘图与打印）
+│  └─ FunctionPlotter.WinUI/        WinUI 3 应用（含 AI 自然语言绘图）
 └─ tests/                           63 项核心自检（跨平台）
 ```
 
@@ -140,16 +146,17 @@ FunctionPlotter/
 
 | 目标 | 要求 |
 |---|---|
+| Android | JDK 17，Android SDK 35，AGP 8.7，Gradle 8.9 |
 | WinUI 3 | Windows 10 1809+，.NET 8 SDK（或 VS 2022 17.8+ 勾选「.NET 桌面开发」） |
-| UWP | Visual Studio + 「通用 Windows 平台开发」工作负载 + Windows 10/11 SDK |
-| 测试 / Core | 任意平台，`dotnet run --project tests` |
+| 测试 | 任意平台，`dotnet run --project tests` |
 
-> 说明：WinUI 3 的 PRI 打包任务只随 Visual Studio 分发，因此命令行构建需要本机装有 VS
-> （`build.ps1` 会自动定位）；仅用 VS IDE 打开构建则无此要求。
+> 说明：WinUI 3 的 PRI 打包任务只随 Visual Studio 分发，因此命令行构建需要本机装有 VS（`build.ps1` 会自动定位）；
+> 仅用 VS IDE 打开构建则无此要求。
 
 ## 🤝 贡献
 
-Issue / PR 都欢迎。改核心算法请先跑 `dotnet run --project tests`，保证 63 项自检全绿。
+Issue / PR 都欢迎。改核心算法请先跑 `dotnet run --project tests`，保证 63 项自检全绿；
+改 Android 版块请运行 `MathSmokeTest`（36 项）。
 
 ## 📄 许可证
 

@@ -121,7 +121,7 @@ Release 构建（已开启 R8 压缩与资源瘦身）：
 |---|---|
 | DeepSeek | platform.deepseek.com |
 | Kimi | platform.moonshot.cn |
-| MiMo | MiMo 开放平台 |
+| MiMo | mimo.mi.com（按量）/ platform.xiaomimimo.com |
 
 不配置 AI 不影响任何绘图功能。
 

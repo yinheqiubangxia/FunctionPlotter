@@ -147,6 +147,37 @@ namespace FunctionPlotter.WinUI
             RaiseStatus();
         }
 
+        /// <summary>把 X 轴范围设为指定区间并重新适配 Y 轴（AI 绘图给出范围时使用）。</summary>
+        public void SetXRange(double xMin, double xMax)
+        {
+            if (double.IsNaN(xMin) || double.IsNaN(xMax) || double.IsInfinity(xMin) || double.IsInfinity(xMax)) return;
+            if (xMin >= xMax) return;
+            _viewport = _viewport.WithXRange(xMin, xMax);
+            FitViewInternal();
+            Redraw();
+            RaiseStatus();
+        }
+
+        /// <summary>
+        /// 为打印创建一个离线副本：同一表达式、同一视口、同一绘制管线，
+        /// 保证打印输出与屏幕所见一致（所见即所得）。
+        /// </summary>
+        public PlotView CreatePrintClone()
+        {
+            return new PlotView
+            {
+                _expression = _expression,
+                _viewport = _viewport,
+            };
+        }
+
+        /// <summary>打印时隐藏交互层（十字光标与读数框不属于图像本身）。</summary>
+        public void HideCursorLayerForPrint()
+        {
+            _hasPointer = false;
+            Redraw();
+        }
+
         private void FitViewInternal()
         {
             if (_expression != null &&

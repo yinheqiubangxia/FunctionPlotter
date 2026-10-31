@@ -107,12 +107,18 @@ object ExpressionParser {
     /** 在「值/右括号/闭合管道」后紧跟「数/函数/左括号/开启管道」的位置插入隐式乘法。 */
     private fun insertImplicitMultiplication(tokens: List<Token>): List<Token> {
         if (tokens.size < 2) return tokens
-        // 预判每个 Pipe 是开启还是闭合（与解析阶段同一规则：前一个 token 是值则为闭合）
+        // 预判每个 Pipe 是开启还是闭合（与解析阶段同一规则：是值且已有未闭合管道则为闭合）
         val pipeIsOpening = BooleanArray(tokens.size)
         var prevIsValue = false
+        var pipeOpen = false
         for (idx in tokens.indices) {
             when (val t = tokens[idx]) {
-                is Token.Pipe -> { pipeIsOpening[idx] = !prevIsValue; prevIsValue = !prevIsValue && true || prevIsValue; prevIsValue = pipeIsOpening[idx].not() && true; prevIsValue = !pipeIsOpening[idx] }
+                is Token.Pipe -> {
+                    val opening = !(prevIsValue && pipeOpen)
+                    pipeIsOpening[idx] = opening
+                    pipeOpen = opening
+                    prevIsValue = !opening // 闭合管道本身是"值"，开启管道不是
+                }
                 else -> prevIsValue = t is Token.Num || t is Token.RParen ||
                     (t is Token.Ident && (t.name == "x" || t.name in CONSTANTS))
             }

@@ -35,8 +35,8 @@ object AiProviders {
         id = "mimo",
         displayName = "MiMo (小米)",
         baseUrl = "https://api.xiaomimimo.com/v1",
-        defaultModel = "mimo-v1",
-        keyHint = "API Key（MiMo 开放平台获取）",
+        defaultModel = "mimo-v2.6-flash",
+        keyHint = "sk-...（platform.xiaomimimo.com 获取）",
     )
     val CUSTOM = AiProvider(
         id = "custom",

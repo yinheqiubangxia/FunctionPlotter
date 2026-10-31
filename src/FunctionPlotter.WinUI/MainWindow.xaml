@@ -19,6 +19,7 @@
 
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
@@ -81,14 +82,64 @@
                             <MenuFlyoutItem Click="Example_Click" Text="log(x)" />
                             <MenuFlyoutItem Click="Example_Click" Text="x sin(1/x)" />
                         </MenuFlyoutSubItem>
+                        <MenuFlyoutSeparator />
+                        <MenuFlyoutItem Click="Print_Click" Text="打印图像…" />
                     </MenuFlyout>
                 </Button.Flyout>
             </Button>
         </Grid>
 
-        <!-- 中间：绘制区 -->
+        <!-- 第 2 行：AI 自然语言绘图 -->
+        <Grid Grid.Row="1" Padding="16,0,16,10" ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <FontIcon
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                FontSize="14"
+                Glyph="&#xE99A;" />
+
+            <TextBox
+                x:Name="AiBox"
+                Grid.Column="1"
+                VerticalAlignment="Center"
+                FontSize="13"
+                KeyDown="AiBox_KeyDown"
+                PlaceholderText="用一句话描述想画的函数，例如：绘制 y=sin(x) 在 -2π 到 2π 的图像" />
+
+            <ComboBox
+                x:Name="ModelCombo"
+                Grid.Column="2"
+                VerticalAlignment="Center"
+                MinWidth="170"
+                SelectionChanged="ModelCombo_SelectionChanged" />
+
+            <Button
+                x:Name="AiSendButton"
+                Grid.Column="3"
+                VerticalAlignment="Center"
+                Click="AiSend_Click"
+                Content="AI 绘制"
+                Style="{StaticResource AccentButtonStyle}" />
+
+            <Button
+                Grid.Column="4"
+                VerticalAlignment="Center"
+                Click="AiSettings_Click"
+                ToolTipService.ToolTip="模型与 API Key 设置">
+                <FontIcon FontSize="14" Glyph="&#xE713;" />
+            </Button>
+        </Grid>
+
+        <!-- 第 3 行：绘制区 -->
         <Border
-            Grid.Row="1"
+            Grid.Row="2"
             Margin="16,0,16,0"
             Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
@@ -98,7 +149,7 @@
         </Border>
 
         <!-- 底部：状态栏 -->
-        <Grid Grid.Row="2" Padding="16,9,16,12" ColumnSpacing="12">
+        <Grid Grid.Row="3" Padding="16,9,16,12" ColumnSpacing="12">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
