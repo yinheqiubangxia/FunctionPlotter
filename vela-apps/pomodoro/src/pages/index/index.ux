@@ -1,0 +1,186 @@
+<template>
+  <!-- 番茄钟 · Vela 快应用
+       兼容：小米手环 9 / 10 / 11、手环 9 Pro / 10 Pro、Redmi Watch 5 / 6
+       适配：圆环直径按设备短边动态计算，胶囊屏安全区内布局，字体随 DP 宽度缩放 -->
+  <div class="page">
+    <text class="mode-label">{{ mode === 'work' ? '专注' : '休息' }}</text>
+
+    <canvas id="ring" class="ring"></canvas>
+
+    <text class="time-text">{{ timeText }}</text>
+    <text class="round-text">第 {{ rounds }} 轮</text>
+
+    <div class="btn-row">
+      <div class="btn primary" @click="toggle">
+        <text class="btn-text">{{ running ? '暂停' : '开始' }}</text>
+      </div>
+      <div class="btn" @click="reset">
+        <text class="btn-text">重置</text>
+      </div>
+    </div>
+    <div class="btn-row">
+      <div class="btn small" @click="setDuration(15)"><text class="btn-text">15</text></div>
+      <div class="btn small" @click="setDuration(25)"><text class="btn-text">25</text></div>
+      <div class="btn small" @click="setDuration(45)"><text class="btn-text">45</text></div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { getDevice } from '../../common/device'
+import vibrator from '@system.vibrator'
+
+export default {
+  private: {
+    mode: 'work',       // work / rest
+    running: false,
+    durationMin: 25,
+    remainSec: 25 * 60,
+    rounds: 1,
+    timeText: '25:00',
+    timer: null
+  },
+
+  onReady() {
+    this.dev = getDevice()
+    this.ringSize = Math.round(Math.min(this.dev.safe.w, this.dev.safe.h * 0.45))
+    this.ctx = this.$element('ring').getContext('2d')
+    this.renderRing()
+  },
+
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+  },
+
+  toggle() {
+    if (this.running) {
+      this.pause()
+    } else {
+      this.running = true
+      this.timer = setInterval(() => this.tick(), 1000)
+    }
+  },
+
+  pause() {
+    this.running = false
+    if (this.timer) { clearInterval(this.timer); this.timer = null }
+  },
+
+  reset() {
+    this.pause()
+    this.mode = 'work'
+    this.rounds = 1
+    this.remainSec = this.durationMin * 60
+    this.updateText()
+    this.renderRing()
+  },
+
+  setDuration(min) {
+    this.pause()
+    this.durationMin = min
+    this.mode = 'work'
+    this.remainSec = min * 60
+    this.updateText()
+    this.renderRing()
+  },
+
+  tick() {
+    this.remainSec--
+    if (this.remainSec <= 0) {
+      this.pause()
+      vibrator.vibrate({ mode: 'long' })
+      if (this.mode === 'work') {
+        this.mode = 'rest'
+        this.remainSec = 5 * 60
+        this.rounds++
+      } else {
+        this.mode = 'work'
+        this.remainSec = this.durationMin * 60
+      }
+    }
+    this.updateText()
+    this.renderRing()
+  },
+
+  updateText() {
+    const m = Math.floor(this.remainSec / 60)
+    const s = this.remainSec % 60
+    this.timeText = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s
+  },
+
+  renderRing() {
+    if (!this.ctx) return
+    const ctx = this.ctx
+    const size = this.ringSize
+    const cx = size / 2, cy = size / 2
+    const r = size / 2 - 8
+    const total = (this.mode === 'work' ? this.durationMin : 5) * 60
+    const progress = 1 - this.remainSec / total
+
+    ctx.clearRect(0, 0, size, size)
+    // 底环
+    ctx.strokeStyle = '#2a2d38'
+    ctx.lineWidth = 8
+    ctx.beginPath()
+    ctx.arc(cx, cy, r, 0, Math.PI * 2)
+    ctx.stroke()
+    // 进度弧（专注=澎湃蓝，休息=薄荷绿）
+    ctx.strokeStyle = this.mode === 'work' ? '#5b8cff' : '#4ade80'
+    ctx.lineCap = 'round'
+    ctx.beginPath()
+    ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + progress * Math.PI * 2)
+    ctx.stroke()
+  }
+}
+</script>
+
+<style>
+.page {
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background-color: #0c0d12;
+  align-items: center;
+  justify-content: center;
+}
+.mode-label {
+  color: #8a8f99;
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+.ring {
+  width: 180px;
+  height: 180px;
+}
+.time-text {
+  color: #f2f3f7;
+  font-size: 36px;
+  margin-top: 10px;
+}
+.round-text {
+  color: #8a8f99;
+  font-size: 14px;
+  margin-top: 4px;
+}
+.btn-row {
+  flex-direction: row;
+  justify-content: center;
+  margin-top: 12px;
+}
+.btn {
+  background-color: #23252e;
+  border-radius: 14px;
+  padding: 10px 22px;
+  margin: 0 6px;
+}
+.primary {
+  background-color: #2f6bff;
+}
+.small {
+  padding: 6px 16px;
+}
+.btn-text {
+  color: #f2f3f7;
+  font-size: 16px;
+}
+</style>

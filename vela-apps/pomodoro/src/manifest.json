@@ -1,0 +1,27 @@
+{
+  "package": "com.yinheqiubangxia.pomodoro",
+  "name": "番茄钟",
+  "versionName": "1.0.0",
+  "versionCode": 1,
+  "icon": "/common/icon.png",
+  "minPlatformVersion": 1000,
+  "features": [
+    { "name": "system.device" },
+    { "name": "system.vibrator" }
+  ],
+  "config": {
+    "logLevel": "info",
+    "designWidth": 192
+  },
+  "router": {
+    "entry": "pages/index",
+    "pages": {
+      "pages/index": { "component": "index" }
+    }
+  },
+  "display": {
+    "titleBar": false,
+    "fullScreen": true,
+    "orientation": "portrait"
+  }
+}

@@ -44,3 +44,9 @@ Desktop.ini
 *.msixupload
 *.cer
 *.pfx
+
+# ===== Vela 快应用 =====
+node_modules/
+vela-apps/.temp_*/
+vela-apps/*/dist/
+vela-apps/*/build/

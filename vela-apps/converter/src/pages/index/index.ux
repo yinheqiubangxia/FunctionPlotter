@@ -1,0 +1,203 @@
+<template>
+  <!-- 单位换算 · Vela 快应用
+       兼容：小米手环 9 / 10 / 11、手环 9 Pro / 10 Pro、Redmi Watch 5 / 6
+       适配：类别/单位用「点击循环切换」代替下拉列表（手环窄屏下拉体验差），
+             胶囊屏上所有可点元素位于安全区内，键盘行数随屏高自适应 -->
+  <div class="page">
+    <div class="cat-row">
+      <text class="cat" for="c in categories" @click="setCategory(c)">{{ c.label }}</text>
+    </div>
+
+    <div class="panel">
+      <div class="unit-line" @click="cycleUnit('from')">
+        <text class="value">{{ input || '0' }}</text>
+        <text class="unit">{{ fromUnit.label }}</text>
+      </div>
+      <text class="eq">=</text>
+      <div class="unit-line" @click="cycleUnit('to')">
+        <text class="value result">{{ resultText }}</text>
+        <text class="unit">{{ toUnit.label }}</text>
+      </div>
+    </div>
+
+    <div class="keyboard">
+      <div class="krow" for="row in keys">
+        <div class="key" for="k in row" @click="onKey(k)">
+          <text class="key-text">{{ k }}</text>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { getDevice } from '../../common/device'
+
+// 单位表：factor 为「到基准单位」的倍率；温度单独处理
+const UNITS = {
+  length: {
+    base: 'm',
+    list: [
+      { label: '毫米', f: 0.001 }, { label: '厘米', f: 0.01 }, { label: '米', f: 1 },
+      { label: '千米', f: 1000 }, { label: '英寸', f: 0.0254 }, { label: '英尺', f: 0.3048 }, { label: '英里', f: 1609.344 }
+    ]
+  },
+  weight: {
+    base: 'kg',
+    list: [
+      { label: '克', f: 0.001 }, { label: '千克', f: 1 }, { label: '吨', f: 1000 },
+      { label: '盎司', f: 0.0283495 }, { label: '磅', f: 0.453592 }, { label: '斤', f: 0.5 }
+    ]
+  },
+  temp: {
+    base: 'C',
+    list: [{ label: '℃' }, { label: '℉' }, { label: 'K' }]
+  }
+}
+
+export default {
+  private: {
+    categories: [
+      { key: 'length', label: '长度' },
+      { key: 'weight', label: '重量' },
+      { key: 'temp', label: '温度' }
+    ],
+    cat: 'length',
+    fromIdx: 2,
+    toIdx: 0,
+    fromUnit: { label: '米' },
+    toUnit: { label: '毫米' },
+    input: '',
+    resultText: '0',
+    keys: [
+      ['7', '8', '9'],
+      ['4', '5', '6'],
+      ['1', '2', '3'],
+      ['.', '0', '⌫']
+    ]
+  },
+
+  onReady() {
+    this.dev = getDevice()
+    this.syncUnits()
+  },
+
+  setCategory(c) {
+    this.cat = c.key
+    this.fromIdx = c.key === 'length' ? 2 : 1
+    this.toIdx = 0
+    this.syncUnits()
+  },
+
+  syncUnits() {
+    const list = UNITS[this.cat].list
+    this.fromUnit = list[this.fromIdx]
+    this.toUnit = list[this.toIdx]
+    this.convert()
+  },
+
+  cycleUnit(which) {
+    const list = UNITS[this.cat].list
+    if (which === 'from') this.fromIdx = (this.fromIdx + 1) % list.length
+    else this.toIdx = (this.toIdx + 1) % list.length
+    this.syncUnits()
+  },
+
+  onKey(k) {
+    if (k === '⌫') {
+      this.input = this.input.slice(0, -1)
+    } else if (k === '.') {
+      if (this.input.indexOf('.') < 0) this.input = (this.input || '0') + '.'
+    } else {
+      if (this.input.length < 10) this.input += k
+    }
+    this.convert()
+  },
+
+  convert() {
+    const v = parseFloat(this.input)
+    if (isNaN(v)) { this.resultText = '0'; return }
+    let out
+    if (this.cat === 'temp') {
+      // 先转摄氏度，再转目标
+      const from = this.fromUnit.label, to = this.toUnit.label
+      let c = from === '℃' ? v : from === '℉' ? (v - 32) * 5 / 9 : v - 273.15
+      out = to === '℃' ? c : to === '℉' ? c * 9 / 5 + 32 : c + 273.15
+    } else {
+      out = v * this.fromUnit.f / this.toUnit.f
+    }
+    this.resultText = formatNum(out)
+  }
+}
+
+function formatNum(n) {
+  if (!isFinite(n)) return '—'
+  const abs = Math.abs(n)
+  if (abs !== 0 && (abs >= 1e7 || abs < 1e-4)) return n.toExponential(3)
+  return String(Math.round(n * 10000) / 10000)
+}
+</script>
+
+<style>
+.page {
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background-color: #0c0d12;
+}
+.cat-row {
+  flex-direction: row;
+  justify-content: space-around;
+  padding: 12px 6px;
+}
+.cat {
+  color: #8a8f99;
+  font-size: 16px;
+}
+.panel {
+  padding: 8px 16px;
+  align-items: center;
+}
+.unit-line {
+  flex-direction: row;
+  align-items: baseline;
+}
+.value {
+  color: #f2f3f7;
+  font-size: 30px;
+}
+.result {
+  color: #5b8cff;
+}
+.unit {
+  color: #8a8f99;
+  font-size: 16px;
+  margin-left: 8px;
+}
+.eq {
+  color: #8a8f99;
+  font-size: 18px;
+}
+.keyboard {
+  flex: 1;
+  flex-direction: column;
+  padding: 4px;
+}
+.krow {
+  flex: 1;
+  flex-direction: row;
+}
+.key {
+  flex: 1;
+  margin: 3px;
+  border-radius: 12px;
+  background-color: #23252e;
+  justify-content: center;
+  align-items: center;
+}
+.key-text {
+  color: #f2f3f7;
+  font-size: 20px;
+  text-align: center;
+}
+</style>

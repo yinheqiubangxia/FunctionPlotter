@@ -1,0 +1,8 @@
+<script>
+export default {
+  onCreate() {
+    console.info('单位换算启动')
+  },
+  onDestroy() {}
+}
+</script>

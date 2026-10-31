@@ -1,0 +1,8 @@
+<script>
+export default {
+  onCreate() {
+    console.info('函数绘图器启动')
+  },
+  onDestroy() {}
+}
+</script>

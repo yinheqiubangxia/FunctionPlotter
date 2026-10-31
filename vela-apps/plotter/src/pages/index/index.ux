@@ -1,0 +1,287 @@
+<template>
+  <!-- 函数绘图器 · Vela 快应用
+       兼容：小米手环 9 / 10 / 11（胶囊屏）、手环 9 Pro / 10 Pro（矩形）、Redmi Watch 5 / 6（矩形手表）
+       适配：getDevice() 运行时探测 + 胶囊屏安全区 + 采样点数随画布宽度缩放 -->
+  <div class="page">
+    <div class="expr-bar">
+      <text class="expr-text">{{ displayExpr }}</text>
+      <text class="theme-btn" @click="toggleTheme">◐</text>
+    </div>
+
+    <canvas id="plot" class="plot"
+            @touchstart="onTouchStart"
+            @touchmove="onTouchMove"
+            @touchend="onTouchEnd"></canvas>
+
+    <div class="keyboard">
+      <div class="krow" for="row in keys">
+        <div class="key" for="k in row" @click="onKey(k)">
+          <text class="key-text">{{ k }}</text>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { getDevice } from '../../common/device'
+import { compile } from '../../common/parser'
+
+const MAX_SAMPLES = 96
+const JUMP_RATIO = 40
+
+export default {
+  private: {
+    expr: '',
+    displayExpr: 'f(x) = ',
+    dark: true,
+    dev: null,
+    view: { xMin: -6, xMax: 6, yMin: -4, yMax: 4 },
+    keys: [
+      ['7', '8', '9', '(', ')'],
+      ['4', '5', '6', '*', '/'],
+      ['1', '2', '3', '+', '-'],
+      ['0', '.', 'x', '^', 'π'],
+      ['sin(', 'cos(', 'tan(', '√(', '⌫']
+    ],
+    touch: { mode: 'idle', lastX: 0, lastY: 0, lastDist: 0 },
+    redrawPending: false
+  },
+
+  onReady() {
+    this.dev = getDevice()
+    const c = this.$element('plot')
+    // 画布占屏高 45%，键盘 40%，表达式条 15%（按设备实际高度分配）
+    this.plotW = this.dev.w
+    this.plotH = Math.round(this.dev.h * 0.42)
+    this.ctx = c.getContext('2d')
+    this.redraw()
+  },
+
+  // ---- 表达式输入 ----
+  onKey(k) {
+    if (k === '⌫') {
+      this.expr = this.expr.slice(0, -1)
+    } else if (k === 'π') {
+      this.expr += 'pi'
+    } else if (k === '√(') {
+      this.expr += 'sqrt('
+    } else {
+      this.expr += k
+    }
+    this.displayExpr = 'f(x) = ' + this.expr
+    this.scheduleRedraw()
+  },
+
+  toggleTheme() {
+    this.dark = !this.dark
+    this.redraw()
+  },
+
+  // ---- 手势：单指拖动平移 / 双指捏合缩放 ----
+  onTouchStart(e) {
+    const t = e.touches[0]
+    this.touch.mode = 'pan'
+    this.touch.lastX = t.globalX
+    this.touch.lastY = t.globalY
+    this.touch.lastDist = 0
+  },
+
+  onTouchMove(e) {
+    const ts = e.touches
+    if (ts.length >= 2) {
+      const a = ts[0], b = ts[1]
+      const dx = a.globalX - b.globalX
+      const dy = a.globalY - b.globalY
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      if (this.touch.mode !== 'pinch') {
+        this.touch.mode = 'pinch'
+        this.touch.lastDist = dist
+        return
+      }
+      const scale = dist / this.touch.lastDist
+      this.touch.lastDist = dist
+      if (scale > 0 && scale !== 1) this.pinch(scale)
+      return
+    }
+    const t = ts[0]
+    const dx = t.globalX - this.touch.lastX
+    const dy = t.globalY - this.touch.lastY
+    this.touch.lastX = t.globalX
+    this.touch.lastY = t.globalY
+    this.pan(dx, dy)
+  },
+
+  onTouchEnd() {
+    this.touch.mode = 'idle'
+  },
+
+  pan(dxPx, dyPx) {
+    const v = this.view
+    const ddx = -(dxPx / this.plotW) * (v.xMax - v.xMin)
+    const ddy = (dyPx / this.plotH) * (v.yMax - v.yMin)
+    this.view = { xMin: v.xMin + ddx, xMax: v.xMax + ddx, yMin: v.yMin + ddy, yMax: v.yMax + ddy }
+    this.scheduleRedraw()
+  },
+
+  pinch(scale) {
+    const v = this.view
+    const cx = (v.xMin + v.xMax) / 2
+    const cy = (v.yMin + v.yMax) / 2
+    const halfX = (v.xMax - v.xMin) / 2 / scale
+    const halfY = (v.yMax - v.yMin) / 2 / scale
+    this.view = { xMin: cx - halfX, xMax: cx + halfX, yMin: cy - halfY, yMax: cy + halfY }
+    this.scheduleRedraw()
+  },
+
+  scheduleRedraw() {
+    if (this.redrawPending) return
+    this.redrawPending = true
+    setTimeout(() => {
+      this.redrawPending = false
+      this.redraw()
+    }, 16)
+  },
+
+  // ---- 渲染 ----
+  toScreenX(x) {
+    return ((x - this.view.xMin) / (this.view.xMax - this.view.xMin)) * this.plotW
+  },
+  toScreenY(y) {
+    return this.plotH - ((y - this.view.yMin) / (this.view.yMax - this.view.yMin)) * this.plotH
+  },
+
+  redraw() {
+    if (!this.ctx) return
+    const ctx = this.ctx
+    const w = this.plotW, h = this.plotH
+    const bg = this.dark ? '#0c0d12' : '#f5f6fa'
+    const grid = this.dark ? '#3a3f4a' : '#d0d4dd'
+    const axis = this.dark ? '#c8ccd6' : '#3a3f4a'
+    const curve = this.dark ? '#5b8cff' : '#2f6bff'
+
+    ctx.fillStyle = bg
+    ctx.fillRect(0, 0, w, h)
+
+    // 网格（nice step：1/2/5 × 10^k）
+    const stepX = niceStep((this.view.xMax - this.view.xMin) / 6)
+    const stepY = niceStep((this.view.yMax - this.view.yMin) / 5)
+    ctx.strokeStyle = grid
+    ctx.lineWidth = 1
+    for (let v = Math.ceil(this.view.xMin / stepX) * stepX; v <= this.view.xMax; v += stepX) {
+      const sx = this.toScreenX(v)
+      line(ctx, sx, 0, sx, h)
+    }
+    for (let v = Math.ceil(this.view.yMin / stepY) * stepY; v <= this.view.yMax; v += stepY) {
+      const sy = this.toScreenY(v)
+      line(ctx, 0, sy, w, sy)
+    }
+
+    // 坐标轴
+    ctx.strokeStyle = axis
+    ctx.lineWidth = 2
+    if (this.view.yMin <= 0 && this.view.yMax >= 0) {
+      const sy = this.toScreenY(0)
+      line(ctx, 0, sy, w, sy)
+    }
+    if (this.view.xMin <= 0 && this.view.xMax >= 0) {
+      const sx = this.toScreenX(0)
+      line(ctx, sx, 0, sx, h)
+    }
+
+    if (!this.expr) return
+    let f
+    try {
+      f = compile(this.expr)
+    } catch (err) {
+      ctx.fillStyle = this.dark ? '#ff6b6b' : '#e5484d'
+      ctx.font = '14px sans-serif'
+      ctx.fillText('表达式有误', 8, h / 2)
+      return
+    }
+
+    // 采样 + 渐近线断点
+    const n = Math.min(MAX_SAMPLES, Math.max(24, Math.floor(w * 0.5)))
+    const spanX = this.view.xMax - this.view.xMin
+    const spanY = this.view.yMax - this.view.yMin
+    ctx.strokeStyle = curve
+    ctx.lineWidth = 2
+    let prev = null
+    for (let i = 0; i <= n; i++) {
+      const x = this.view.xMin + (spanX * i) / n
+      let y = NaN
+      try { y = f(x) } catch (e) { y = NaN }
+      if (!isFinite(y)) { prev = null; continue }
+      if (prev && Math.abs(y - prev.y) > spanY * JUMP_RATIO / 10) { prev = null }
+      const p = { x: this.toScreenX(x), y: this.toScreenY(y), dy: y }
+      if (prev) line(ctx, prev.sx, prev.sy, p.x, p.y)
+      prev = { sx: p.x, sy: p.y, y: p.dy }
+    }
+  }
+}
+
+function line(ctx, x1, y1, x2, y2) {
+  ctx.beginPath()
+  ctx.moveTo(x1, y1)
+  ctx.lineTo(x2, y2)
+  ctx.stroke()
+}
+
+function niceStep(raw) {
+  if (raw <= 0 || !isFinite(raw)) return 1
+  const pow = Math.pow(10, Math.floor(Math.log10(raw)))
+  const frac = raw / pow
+  const nice = frac <= 1 ? 1 : frac <= 2 ? 2 : frac <= 5 ? 5 : 10
+  return nice * pow
+}
+</script>
+
+<style>
+.page {
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background-color: #0c0d12;
+}
+.expr-bar {
+  height: 15%;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+.expr-text {
+  color: #f2f3f7;
+  font-size: 18px;
+}
+.theme-btn {
+  color: #8a8f99;
+  font-size: 20px;
+  margin-left: 12px;
+}
+.plot {
+  width: 100%;
+  height: 42%;
+}
+.keyboard {
+  height: 43%;
+  flex-direction: column;
+  padding: 4px;
+}
+.krow {
+  flex: 1;
+  flex-direction: row;
+}
+.key {
+  flex: 1;
+  margin: 2px;
+  border-radius: 10px;
+  background-color: #23252e;
+  justify-content: center;
+  align-items: center;
+}
+.key-text {
+  color: #f2f3f7;
+  font-size: 16px;
+  text-align: center;
+}
+</style>
