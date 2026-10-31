@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html data-page-node-id="tAZVgQT2U2ffdAyXYY7if2" lang="zh-CN">
+<head data-page-node-id="mzW2PY3LuxS6E9qFv0M1uI">
+<script data-page-node-id="VUFFMVXIpzt6aoIHYb4rWD" src="/page/page_comm/inject.js"></script>
+<meta data-page-node-id="p85k76VTedyuUwnbIFGMdz" charset="utf-8">
+<meta data-page-node-id="bd9R4D0dNkCta0zQuycqSQ" content="width=device-width, initial-scale=1" name="viewport">
+<title data-page-node-id="VobA4tXgSuXvI1mWjpG0Gm" data-pnid-children="cakngDc1aZcZSxPjEpJxbi">函数绘图器 · WinUI 预览</title>
+<style data-page-node-id="4oFTGo9VO8uti2wyHMmtxU" data-pnid-children="vOTbYkcQs4e0qbm4knSLqi">
+  :root{
+    --stage:#e9e9ea;
+    --win-bg:#f3f3f3;
+    --layer:#fbfbfb;
+    --card:#ffffff;
+    --stroke:rgba(0,0,0,.0578);
+    --stroke-strong:rgba(0,0,0,.0906);
+    --text:#1b1b1b;
+    --text-2:#5d5d5d;
+    --text-3:#8b8b8b;
+    --accent:#0f6cbd;
+    --accent-hover:rgba(15,108,189,.08);
+    --field:#ffffff;
+    --field-border:rgba(0,0,0,.0578);
+    --field-border-bottom:rgba(0,0,0,.44);
+    --hover:rgba(0,0,0,.0394);
+    --pressed:rgba(0,0,0,.0241);
+    --plot-bg:#fbfbfb;
+    --grid:#ececec;
+    --axis:#b4b4b4;
+    --tick:#6b6b6b;
+    --critical:#c42b1c;
+    --shadow:0 24px 56px rgba(0,0,0,.22),0 2px 8px rgba(0,0,0,.10);
+  }
+  html[data-theme="dark"]{
+    --stage:#1a1a1a;
+    --win-bg:#202020;
+    --layer:#272727;
+    --card:#2b2b2b;
+    --stroke:rgba(255,255,255,.0698);
+    --stroke-strong:rgba(255,255,255,.093);
+    --text:#f2f2f2;
+    --text-2:#c9c9c9;
+    --text-3:#969696;
+    --accent:#4cc2ff;
+    --accent-hover:rgba(76,194,255,.10);
+    --field:#2d2d2d;
+    --field-border:rgba(255,255,255,.0698);
+    --field-border-bottom:rgba(255,255,255,.54);
+    --hover:rgba(255,255,255,.0605);
+    --pressed:rgba(255,255,255,.0419);
+    --plot-bg:#1b1b1b;
+    --grid:#2c2c2c;
+    --axis:#5c5c5c;
+    --tick:#9a9a9a;
+    --critical:#ff99a4;
+    --shadow:0 24px 56px rgba(0,0,0,.55),0 2px 8px rgba(0,0,0,.34);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    display:flex;align-items:center;justify-content:center;
+    background:
+      radial-gradient(1200px 600px at 20% -10%, rgba(15,108,189,.10), transparent 60%),
+      radial-gradient(900px 500px at 110% 110%, rgba(120,80,200,.10), transparent 60%),
+      var(--stage);
+    font-family:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+    padding:24px 16px;
+  }
+
+  .stage{display:flex;flex-direction:column;align-items:center;gap:12px;}
+
+  .app{
+    width:620px;max-width:100%;
+    height:520px;max-height:calc(100vh - 80px);
+    background:var(--win-bg);
+    border-radius:8px;
+    border:1px solid var(--stroke-strong);
+    box-shadow:var(--shadow);
+    display:flex;flex-direction:column;
+    overflow:hidden;
+    position:relative;
+  }
+
+  /* ---- 标题栏 ---- */
+  .titlebar{
+    height:34px;flex:none;
+    display:flex;align-items:center;justify-content:space-between;
+    padding-left:12px;
+    user-select:none;
+  }
+  .tb-left{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-2);letter-spacing:.2px;}
+  .tb-left svg{display:block;}
+  .tb-right{display:flex;align-items:center;height:100%;}
+  .cap-btn{
+    width:46px;height:34px;border:0;background:transparent;color:var(--text-2);
+    display:grid;place-items:center;cursor:default;
+    font-size:11px;line-height:1;
+  }
+  .cap-btn:hover{background:var(--hover);}
+  .cap-btn.theme{width:36px;font-size:13px;cursor:pointer;color:var(--text-2);}
+  .cap-btn.theme:hover{background:var(--hover);color:var(--text);}
+  .cap-btn.close:hover{background:#c42b1c;color:#fff;}
+
+  /* ---- 工具栏 ---- */
+  .toolbar{
+    flex:none;display:grid;grid-template-columns:auto 1fr auto auto;gap:8px;
+    align-items:center;
+    padding:8px 14px 6px;
+  }
+  .fx{font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;letter-spacing:.2px;}
+
+  .field{
+    position:relative;
+  }
+  .field input{
+    width:100%;height:32px;
+    padding:0 10px;
+    font-family:"Cascadia Mono",Consolas,"SFMono-Regular",monospace;
+    font-size:14px;
+    color:var(--text);
+    background:var(--field);
+    border:1px solid var(--field-border);
+    border-bottom:1px solid var(--field-border-bottom);
+    border-radius:4px;
+    outline:none;
+    transition:background .08s ease;
+  }
+  .field input:hover{background:var(--hover);}
+  .field input:focus{
+    background:var(--field);
+    border-bottom:2px solid var(--accent);
+    padding-bottom:0;
+  }
+  .field input::placeholder{color:var(--text-3);}
+
+  .btn{
+    height:32px;min-width:52px;padding:0 12px;
+    font-size:13px;font-family:inherit;color:var(--text);
+    background:rgba(255,255,255,.55);
+    border:1px solid var(--field-border);
+    border-radius:4px;cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;
+    transition:background .08s ease;
+  }
+  html[data-theme="dark"] .btn{background:rgba(255,255,255,.0605);}
+  .btn:hover{background:var(--hover);}
+  .btn:active{background:var(--pressed);}
+  .btn.icon{min-width:32px;width:32px;padding:0;font-size:15px;letter-spacing:1px;}
+
+  /* ---- 画布 ---- */
+  .plotwrap{
+    flex:1 1 auto;min-height:0;
+    margin:2px 14px 0;
+    position:relative;
+    border-radius:8px;
+    border:1px solid var(--stroke);
+    background:var(--plot-bg);
+    overflow:hidden;
+  }
+  #plot{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair;}
+
+  .readout{
+    position:absolute;pointer-events:none;
+    padding:5px 8px;border-radius:6px;
+    font-family:"Cascadia Mono",Consolas,monospace;font-size:11.5px;line-height:1.5;
+    color:var(--text-2);
+    background:color-mix(in srgb, var(--card) 92%, transparent);
+    border:1px solid var(--stroke);
+    box-shadow:0 2px 8px rgba(0,0,0,.08);
+    white-space:pre;
+    opacity:0;transition:opacity .1s;
+    backdrop-filter:blur(12px);
+  }
+  .readout.on{opacity:1;}
+
+  /* ---- 状态栏 ---- */
+  .statusbar{
+    flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:7px 16px 9px;
+    font-size:12px;
+  }
+  #status{color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #status.error{color:var(--critical);}
+  .hint{color:var(--text-3);white-space:nowrap;}
+
+  /* ---- 菜单 ---- */
+  .flyout{
+    position:absolute;top:44px;right:14px;z-index:30;
+    min-width:186px;
+    padding:4px;
+    background:var(--card);
+    border:1px solid var(--stroke-strong);
+    border-radius:8px;
+    box-shadow:0 8px 24px rgba(0,0,0,.18);
+    display:none;
+  }
+  .flyout.open{display:block;}
+  .mi{
+    display:flex;align-items:center;justify-content:space-between;
+    height:32px;padding:0 10px;border-radius:4px;
+    font-size:13px;color:var(--text);cursor:pointer;
+  }
+  .mi:hover{background:var(--hover);}
+  .mi .key{font-size:11px;color:var(--text-3);}
+  .sep{height:1px;margin:4px 6px;background:var(--stroke);}
+  .mi.head{color:var(--text-3);font-size:11.5px;cursor:default;height:26px;}
+  .mi.head:hover{background:transparent;}
+
+  .note{font-size:12px;color:var(--text-3);margin:0;text-align:center;max-width:620px;line-height:1.6;}
+
+  @media (max-width:560px){
+    .hint{display:none;}
+    .app{height:calc(100vh - 60px);}
+  }
+</style>
+</head>
+<body data-page-node-id="7nr04lWcuHG5frRRzixvrj">
+<div data-page-node-id="0zlM2LaGtmkUvsrsturK0D" class="stage">
+  <div data-page-node-id="ZfweemPi3q6mTyzaJnbf6K" class="app" id="app">
+    <div data-page-node-id="FYQd7nz1vd3y82Vh2kxi3y" class="titlebar">
+      <div data-page-node-id="kpizqRw52sFT7iaRpneKhZ" class="tb-left">
+        <svg data-page-node-id="rwVl76hdvxEJhn7ymprfXQ" aria-hidden="true" fill="none" height="14" viewBox="0 0 16 16" width="14">
+          <path data-page-node-id="OqdO80FUkX5DeeiHsBWkXd" d="M1.5 8c2.2 0 2.2-5 4.4-5s2.2 10 4.4 10 2.2-5 4.2-5" stroke="var(--accent)" stroke-linecap="round" stroke-width="1.6"/>
+        </svg>
+        <span data-page-node-id="GItuKgm3DvWGoaPeB21WaI"><!--pnid:biODViBVfMpVmrY7DNqilt-->函数绘图器</span>
+      </div>
+      <div data-page-node-id="aVkZuhA7ANlxWXJxEoiPW5" class="tb-right">
+        <button data-page-node-id="F6H8bqWBWNi0DJBpgwod9i" class="cap-btn theme" id="themeBtn" title="切换深色 / 浅色"><!--pnid:4aQ2Rax32D1PlMkSg9Q5Jy-->◐</button>
+        <button data-page-node-id="eBmhYnRpdLW3CQ7mRUEM1t" class="cap-btn" tabindex="-1"><!--pnid:9eGacsQyBLA63G0q09S5dK-->&#8212;</button>
+        <button data-page-node-id="KpZGyPEqyxFKQ4c0tHLvXA" class="cap-btn" tabindex="-1"><!--pnid:L7CHyfGuVx0xRZStVe3j2S-->&#9723;</button>
+        <button data-page-node-id="NN7a1JjLdbOF2LxCk1uUm4" class="cap-btn close" tabindex="-1"><!--pnid:FevNHff7Su8Z9sTn6LpZ6X-->&#10005;</button>
+      </div>
+    </div>
+
+    <div data-page-node-id="vwQe2bsT7o4WsbbncpxWpr" class="toolbar">
+      <label data-page-node-id="uIzN35mI2ds5O2zmGkcsTP" class="fx" for="fn"><!--pnid:8uDFpDQgXPJgqSEXzTTwGn-->f(x) =</label>
+      <div data-page-node-id="1Gu0xiBTKOEac1rYZDvsXW" class="field"><input data-page-node-id="atjknCMKWhOfURLCBrJzpb" autocapitalize="off" autocomplete="off" id="fn" placeholder="例如 sin(x)/x" spellcheck="false" value="sin(x)/x"></div>
+      <button data-page-node-id="sMBl5SQVoQjXRrtqdvHYjx" class="btn" id="fitBtn" title="根据当前 X 范围自动调整 Y 轴（双击画布同效）"><!--pnid:8bGRWXjMjvmmobZsLtt9VW-->适配</button>
+      <button data-page-node-id="WB3Oxjgxjyen91f4k8COCM" class="btn icon" id="moreBtn" title="更多"><!--pnid:NVMgeDs4rEp0P27NcHJ5NP-->&#8943;</button>
+    </div>
+
+    <div data-page-node-id="sZlwG9uVEEYMbfqxiUzqIx" class="plotwrap" id="plotwrap">
+      <canvas data-page-node-id="bGy4ut74NrlbhMJdoT1Tth" id="plot"></canvas>
+      <div data-page-node-id="NmfReChx57a6oBME6jndwr" class="readout" id="readout"></div>
+    </div>
+
+    <div data-page-node-id="hHN4gNX4q3TTxG9UfYfWcT" class="statusbar">
+      <span data-page-node-id="8OWKrF3mYIiDl0qlmg02gi" id="status"></span>
+      <span data-page-node-id="2ZyVVNrjUgwMS45TjxuEgw" class="hint"><!--pnid:Shlf5t90arFNaimIwx1B2U-->滚轮缩放 · 拖动平移 · 双击适配</span>
+    </div>
+
+    <div data-page-node-id="fZavj64sQAhvjAn9QS5NIC" class="flyout" id="flyout">
+      <div data-page-node-id="BWKXla1IZC7VpByjZ4iJKn" class="mi" data-act="zin"><span data-page-node-id="fimv63uGGy8LE05RNa8voc"><!--pnid:U8AslTkeyBneFFPBvPpFiW-->放大</span><span data-page-node-id="Sy1V8Do65YvZFuAcrmHFg0" class="key"><!--pnid:zBz4q3BT18B9XUzCOXO84Q-->Ctrl + +</span></div>
+      <div data-page-node-id="sEZRI0lAnYBO2fHvOVIRgu" class="mi" data-act="zout"><span data-page-node-id="ATrLDNdJHhIBilxWbEmpo5"><!--pnid:LumFn8a9Re9ooB84ijyFyd-->缩小</span><span data-page-node-id="27nxEjNEjLeY08iYW1OPqX" class="key"><!--pnid:BjaddyKcZIxO1v9dvuaGZQ-->Ctrl + -</span></div>
+      <div data-page-node-id="DMCJtbwOenIH75BYHsv1GW" class="mi" data-act="reset"><span data-page-node-id="OClK3qlzZzZeJ4J43Jhc42"><!--pnid:p1TRIIANnRA8NsjILTcWZD-->重置视图</span><span data-page-node-id="49Oufj4YOIYETpsYVuUTZ3" class="key"><!--pnid:sKHrFRFOWi0eBkGGC2A3u8-->Ctrl + R</span></div>
+      <div data-page-node-id="Wik3qK6DXNAkK9e3EPwrey" class="mi" data-act="fit"><span data-page-node-id="rWft4z2I1kCKtpfGY8jB3U"><!--pnid:GPaXgspXucy6sKXiHVtZev-->适配视图</span><span data-page-node-id="Yl8sl6FSpmMt7C0zNNaNtO" class="key"><!--pnid:MFaESteeFc4rikYUat0KIY-->Ctrl + F</span></div>
+      <div data-page-node-id="IKdopBHd6YnLxbGNMU9ld8" class="sep"></div>
+      <div data-page-node-id="IWpz0l03uJRhx7zkZD6hjh" class="mi head"><span data-page-node-id="Lk5qeMy2Q9jPTa4RSHIGrP"><!--pnid:D5nGtjQXpj7rE3u1M6DkNu-->示例函数</span></div>
+      <div data-page-node-id="ufJjNC9b1PHJs7nHcngZgZ" class="mi" data-ex="sin(x)/x"><!--pnid:ssoztyapX7F4LKzgUaAKoe-->sin(x)/x</div>
+      <div data-page-node-id="nLKVHl04eKYJItZTE6nxAY" class="mi" data-ex="x^2 - 4"><!--pnid:OThOc4ATWgzw3k4jIrhj3e-->x^2 - 4</div>
+      <div data-page-node-id="F4kLdSeFqfTFk7NVgbRIX6" class="mi" data-ex="sin(x)cos(2x)"><!--pnid:svDHe8BpGjOiPVuZ2UnXAs-->sin(x)cos(2x)</div>
+      <div data-page-node-id="H9f1QR1hXL8P7dFoNWR2f9" class="mi" data-ex="exp(-x^2)"><!--pnid:20qMcT8GoWTCuau3ffQFFJ-->exp(-x^2)</div>
+      <div data-page-node-id="Ge4tPx8qFCIoiKRv9KAWVH" class="mi" data-ex="tan(x)"><!--pnid:KR81X65X57XqDRL4SMjpMR-->tan(x)</div>
+      <div data-page-node-id="YDur4MELngPVTZ2HJhxu66" class="mi" data-ex="1/x"><!--pnid:3CnhB6PLJFBWPZu0pHO36n-->1/x</div>
+      <div data-page-node-id="NPkyAj0rTOliFPAXCXc0Lq" class="mi" data-ex="sqrt(x)"><!--pnid:mfqa7qi9RjNNLCGVDtsoz1-->sqrt(x)</div>
+      <div data-page-node-id="oYfpNh3OHgIjqfEU43BaxX" class="mi" data-ex="abs(x) - 2"><!--pnid:FBVxfSuBRuti1yu4R5Rcf1-->abs(x) - 2</div>
+      <div data-page-node-id="zwU3sRWkB48Md9vWmBq5aD" class="mi" data-ex="log(x)"><!--pnid:tDMsG6Dpd2WzYkgtHrBZNs-->log(x)</div>
+      <div data-page-node-id="erC5fKRazNGg3lMlv81UBP" class="mi" data-ex="x sin(1/x)"><!--pnid:tdtUPplmhsWM5G7S5j4ry7-->x sin(1/x)</div>
+    </div>
+  </div>
+
+  <p data-page-node-id="NbBHJerBDAWItUhhpfmaRu" class="note"><!--pnid:T8prdwikzvZTmevZXAXm0L-->浏览器预览：与 WinUI 3 工程共用同一套解析 / 采样 / 绘制算法，界面按 WinUI 的 Fluent 规范还原。<br data-page-node-id="NUAR4gSnaSZn1wGXrkMFWy"><!--pnid:knFiaiZnHYaCntnyoPlDuQ-->
+  实际应用为原生 WinUI 3 窗口，可执行文件需在 Windows 上用 build.ps1 生成。</p>
+</div>
+
+<script data-page-node-id="pQO73RJwhhoYMxmhp4oqnH" data-pnid-children="zFkC5srCEuvxSIJT2AdOS9">
+"use strict";
+
+/* =======================================================================
+   1. 表达式解析（与 FunctionPlotter.Core/ExpressionParser.cs 一致的行为）
+   ======================================================================= */
+
+class ExprError extends Error {
+  constructor(message, position) { super(message); this.position = position; }
+}
+
+const FUNCS1 = {
+  sin: Math.sin, cos: Math.cos, tan: Math.tan,
+  cot: x => 1 / Math.tan(x), sec: x => 1 / Math.cos(x), csc: x => 1 / Math.sin(x),
+  asin: Math.asin, acos: Math.acos, atan: Math.atan,
+  sinh: Math.sinh, cosh: Math.cosh, tanh: Math.tanh,
+  asinh: x => Math.asinh(x), acosh: x => Math.acosh(x), atanh: x => Math.atanh(x),
+  exp: Math.exp, ln: Math.log, log: Math.log10, lg: Math.log10,
+  log2: x => Math.log2(x), log10: Math.log10,
+  sqrt: Math.sqrt, cbrt: Math.cbrt, abs: Math.abs, sign: Math.sign,
+  floor: Math.floor, ceil: Math.ceil,
+  round: x => Math.sign(x) * Math.round(Math.abs(x)),
+  trunc: Math.trunc, frac: x => x - Math.trunc(x),
+  rad: x => x * Math.PI / 180, deg: x => x * 180 / Math.PI
+};
+const FUNCS2 = {
+  pow: Math.pow, atan2: Math.atan2, hypot: Math.hypot,
+  max: Math.max, min: Math.min,
+  mod: (a, b) => a - b * Math.floor(a / b),
+  log: (a, b) => Math.log(a) / Math.log(b)
+};
+const CONSTS = { pi: Math.PI, "π": Math.PI, e: Math.E, tau: Math.PI * 2, phi: (1 + Math.sqrt(5)) / 2 };
+const DIGIT_NAMES = new Set(["log2", "log10", "atan2"]);
+
+function normalize(text) {
+  let out = "";
+  for (const ch of text) {
+    switch (ch) {
+      case "×": case "·": case "⋅": out += "*"; break;
+      case "÷": out += "/"; break;
+      case "−": case "–": case "—": out += "-"; break;
+      case "（": out += "("; break;
+      case "）": out += ")"; break;
+      case "，": out += ","; break;
+      case "＾": out += "^"; break;
+      case "＋": out += "+"; break;
+      case "\u00A0": case "\u3000": out += " "; break;
+      default: out += ch;
+    }
+  }
+  const eq = out.indexOf("=");
+  if (eq >= 0) out = out.slice(eq + 1);
+  return out;
+}
+
+const isLetter = ch => /[A-Za-z_π]/.test(ch);
+
+function tokenize(src) {
+  const tokens = [];
+  let i = 0;
+  while (i < src.length) {
+    const c = src[i];
+    if (/\s/.test(c)) { i++; continue; }
+
+    if (/[0-9]/.test(c) || (c === "." && /[0-9]/.test(src[i + 1] || ""))) {
+      const start = i;
+      while (i < src.length && /[0-9]/.test(src[i])) i++;
+      if (src[i] === ".") { i++; while (i < src.length && /[0-9]/.test(src[i])) i++; }
+      if (src[i] === "e" || src[i] === "E") {
+        const save = i; i++;
+        if (src[i] === "+" || src[i] === "-") i++;
+        if (/[0-9]/.test(src[i] || "")) { while (i < src.length && /[0-9]/.test(src[i])) i++; }
+        else i = save;
+      }
+      const span = src.slice(start, i);
+      const value = Number(span);
+      if (!isFinite(value)) throw new ExprError(`无法识别的数字："${span}"`, start);
+      tokens.push({ type: "num", value, text: span, pos: start });
+      continue;
+    }
+
+    if (isLetter(c)) {
+      const start = i;
+      while (i < src.length && isLetter(src[i])) i++;
+      let name = src.slice(start, i);
+      while (i < src.length && /[0-9]/.test(src[i]) && DIGIT_NAMES.has(name + src[i])) {
+        name += src[i]; i++;
+      }
+      tokens.push({ type: "id", text: name, pos: start });
+      continue;
+    }
+
+    if ("+-*/^|".includes(c)) { tokens.push({ type: "op", sym: c, text: c, pos: i }); i++; continue; }
+    if (c === "(") { tokens.push({ type: "lp", text: c, pos: i }); i++; continue; }
+    if (c === ")") { tokens.push({ type: "rp", text: c, pos: i }); i++; continue; }
+    if (c === ",") { tokens.push({ type: "comma", text: c, pos: i }); i++; continue; }
+
+    throw new ExprError(`无法识别的字符："${c}"`, i);
+  }
+  tokens.push({ type: "end", text: "<结束>", pos: src.length });
+  return tokens;
+}
+
+function compile(text) {
+  const source = normalize(text || "");
+  if (!source.trim()) throw new ExprError("请输入函数表达式", 0);
+
+  const tokens = tokenize(source);
+  let p = 0;
+  const cur = () => tokens[p];
+  const advance = () => tokens[p++];
+  const isOp = sym => cur().type === "op" && cur().sym === sym;
+  const matchOp = sym => { if (isOp(sym)) { p++; return true; } return false; };
+
+  function parseExpr() {
+    let left = parseTerm();
+    for (;;) {
+      if (matchOp("+")) left = { k: "bin", op: "+", a: left, b: parseTerm() };
+      else if (matchOp("-")) left = { k: "bin", op: "-", a: left, b: parseTerm() };
+      else return left;
+    }
+  }
+
+  function startsFactor() {
+    const t = cur().type;
+    return t === "num" || t === "id" || t === "lp";
+  }
+
+  function parseTerm() {
+    let left = parseUnary();
+    for (;;) {
+      if (matchOp("*")) left = { k: "bin", op: "*", a: left, b: parseUnary() };
+      else if (matchOp("/")) left = { k: "bin", op: "/", a: left, b: parseUnary() };
+      else if (startsFactor()) left = { k: "bin", op: "*", a: left, b: parseUnary() };
+      else return left;
+    }
+  }
+
+  function parseUnary() {
+    if (matchOp("-")) return { k: "neg", a: parseUnary() };
+    if (matchOp("+")) return parseUnary();
+    return parsePower();
+  }
+
+  function parsePower() {
+    const base = parseAtom();
+    if (matchOp("^")) return { k: "bin", op: "^", a: base, b: parseUnary() };
+    return base;
+  }
+
+  function parseAtom() {
+    const t = cur();
+
+    if (t.type === "num") { advance(); return { k: "num", v: t.value }; }
+
+    if (t.type === "lp") {
+      advance();
+      const inner = parseExpr();
+      if (cur().type !== "rp") throw new ExprError('缺少右括号 ")"', cur().pos);
+      advance();
+      return inner;
+    }
+
+    if (t.type === "op" && t.sym === "|") {
+      advance();
+      const inner = parseExpr();
+      if (!(cur().type === "op" && cur().sym === "|")) throw new ExprError('绝对值缺少收尾的 "|"', cur().pos);
+      advance();
+      return { k: "fn1", f: Math.abs, a: inner };
+    }
+
+    if (t.type === "id") {
+      const name = t.text;
+      advance();
+      const isCall = cur().type === "lp";
+      const lower = name.toLowerCase();
+      if (isCall && (FUNCS1[lower] || FUNCS2[lower])) return parseCall(lower, t.pos);
+      if (lower === "x") return { k: "x" };
+      if (Object.prototype.hasOwnProperty.call(CONSTS, lower) || Object.prototype.hasOwnProperty.call(CONSTS, name)) {
+        if (isCall) throw new ExprError(`"${name}" 不是函数`, t.pos);
+        return { k: "num", v: CONSTS[lower] !== undefined ? CONSTS[lower] : CONSTS[name] };
+      }
+      const hint = closestFunction(lower);
+      throw new ExprError(hint ? `未知的函数或变量："${name}"（是不是 ${hint}？）` : `未知的函数或变量："${name}"`, t.pos);
+    }
+
+    if (t.type === "rp") throw new ExprError("多了个右括号，或运算符缺失", t.pos);
+    if (t.type === "end") throw new ExprError("表达式不完整，后面还需要内容", t.pos);
+    throw new ExprError(`这里需要一个数值、变量或函数，而不是 "${t.text}"`, t.pos);
+  }
+
+  function parseCall(name, pos) {
+    advance(); // (
+    const args = [];
+    if (cur().type !== "rp") {
+      args.push(parseExpr());
+      while (cur().type === "comma") { advance(); args.push(parseExpr()); }
+    }
+    if (cur().type !== "rp") throw new ExprError(`函数 ${name}( ) 缺少右括号`, cur().pos);
+    advance();
+
+    if (FUNCS1[name] && args.length === 1) return { k: "fn1", f: FUNCS1[name], a: args[0] };
+    if (FUNCS2[name] && args.length === 2) return { k: "fn2", f: FUNCS2[name], a: args[0], b: args[1] };
+    if (name === "log" && args.length === 1) return { k: "fn1", f: Math.log10, a: args[0] };
+
+    const want = FUNCS2[name] ? (FUNCS1[name] ? "1 个或 2 个" : "2 个") : "1 个";
+    throw new ExprError(`函数 ${name} 需要 ${want}参数，实际给了 ${args.length} 个`, cur().pos);
+  }
+
+  function closestFunction(name) {
+    let best = null, bestD = 99;
+    for (const key of Object.keys(FUNCS1)) {
+      const d = levenshtein(name, key);
+      if (d < bestD) { bestD = d; best = key; }
+    }
+    return bestD <= 2 ? best : null;
+  }
+
+  const root = parseExpr();
+  if (cur().type !== "end") {
+    if (cur().type === "rp") throw new ExprError("多余的右括号", cur().pos);
+    throw new ExprError(`这里看不懂："${cur().text}"`, cur().pos);
+  }
+
+  return {
+    text: source.trim(),
+    eval(x) { return evalNode(root, x); }
+  };
+}
+
+function evalNode(n, x) {
+  switch (n.k) {
+    case "num": return n.v;
+    case "x": return x;
+    case "neg": return -evalNode(n.a, x);
+    case "fn1": return n.f(evalNode(n.a, x));
+    case "fn2": return n.f(evalNode(n.a, x), evalNode(n.b, x));
+    case "bin": {
+      const a = evalNode(n.a, x), b = evalNode(n.b, x);
+      switch (n.op) {
+        case "+": return a + b;
+        case "-": return a - b;
+        case "*": return a * b;
+        case "/": return a / b;
+        case "^": return Math.pow(a, b);
+      }
+    }
+  }
+  return NaN;
+}
+
+function levenshtein(a, b) {
+  const prev = new Array(b.length + 1), cur = new Array(b.length + 1);
+  for (let j = 0; j <= b.length; j++) prev[j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    cur[0] = i;
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      cur[j] = Math.min(cur[j - 1] + 1, prev[j] + 1, prev[j - 1] + cost);
+    }
+    for (let j = 0; j <= b.length; j++) prev[j] = cur[j];
+  }
+  return prev[b.length];
+}
+
+/* =======================================================================
+   2. 视口与刻度
+   ======================================================================= */
+
+const vp = { xMin: -10, xMax: 10, yMin: -6, yMax: 6 };
+
+const vpWidth = () => vp.xMax - vp.xMin;
+const vpHeight = () => vp.yMax - vp.yMin;
+const toPxX = (x, w) => (x - vp.xMin) / vpWidth() * w;
+const toPxY = (y, h) => h - (y - vp.yMin) / vpHeight() * h;
+const toWorldX = (px, w) => vp.xMin + px / w * vpWidth();
+const toWorldY = (py, h) => vp.yMin + (h - py) / h * vpHeight();
+
+function niceStep(raw) {
+  if (!(raw > 0) || !isFinite(raw)) return 1;
+  const exp = Math.floor(Math.log10(raw));
+  const mag = Math.pow(10, exp);
+  const f = raw / mag;
+  const nice = f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10;
+  return nice * mag;
+}
+
+function ticks(min, max, step) {
+  const out = [];
+  if (!(step > 0) || !(max > min)) return out;
+  let v = Math.ceil(min / step) * step;
+  for (let guard = 0; v <= max + step * 1e-6 && guard < 200; guard++, v += step) {
+    out.push(Math.abs(v) < step * 1e-9 ? 0 : v);
+  }
+  return out;
+}
+
+function formatTick(value, step) {
+  if (Math.abs(value) < step * 1e-9) return "0";
+  const abs = Math.abs(value);
+  if (abs >= 1e6 || abs < 1e-4) {
+    return value.toExponential(1).replace("e+", "e").replace("e-", "e-");
+  }
+  const decimals = step >= 1 ? 0 : Math.min(6, Math.ceil(-Math.log10(step)));
+  return value.toFixed(Math.max(0, decimals));
+}
+
+/* =======================================================================
+   3. 采样（渐近线断点）
+   ======================================================================= */
+
+function sample(expr, count) {
+  const segments = [];
+  let current = [];
+  const span = Math.max(vpHeight(), 1e-9);
+  const guard = Math.max(Math.abs(vp.yMin), Math.abs(vp.yMax), span) * 4 + 1;
+  const step = vpWidth() / (count - 1);
+  let prevY = NaN, hasPrev = false;
+
+  const flush = () => { if (current.length >= 2) segments.push(current); current = []; };
+
+  for (let i = 0; i < count; i++) {
+    const x = i === count - 1 ? vp.xMax : vp.xMin + step * i;
+    const y = expr.eval(x);
+
+    if (!isFinite(y)) { flush(); hasPrev = false; continue; }
+
+    if (hasPrev) {
+      const crosses = (prevY > vp.yMax && y < vp.yMin) || (prevY < vp.yMin && y > vp.yMax);
+      const jump = Math.abs(y - prevY) > guard * 2;
+      if (crosses || jump) flush();
+    }
+
+    current.push({ x, y: Math.max(-guard, Math.min(guard, y)) });
+    prevY = y; hasPrev = true;
+  }
+  flush();
+  return segments;
+}
+
+function estimateYRange(expr, count) {
+  const values = [];
+  const step = vpWidth() / (count - 1);
+  for (let i = 0; i < count; i++) {
+    const y = expr.eval(vp.xMin + step * i);
+    if (!isFinite(y) || Math.abs(y) > 1e12) continue;
+    values.push(y);
+  }
+  if (values.length < 8) return null;
+  values.sort((a, b) => a - b);
+
+  const pct = q => {
+    const pos = q * (values.length - 1);
+    const i = Math.floor(pos), f = pos - i;
+    return i >= values.length - 1 ? values[values.length - 1] : values[i] * (1 - f) + values[i + 1] * f;
+  };
+
+  let low = pct(0.04), high = pct(0.96);
+  if (!(high > low)) {
+    const c = values[Math.floor(values.length / 2)];
+    low = c - 1; high = c + 1;
+  }
+  const pad = (high - low) * 0.12;
+  low -= pad; high += pad;
+
+  const height = high - low;
+  if (low > 0 && low < height * 0.35) low = 0;
+  if (high < 0 && -high < height * 0.35) high = 0;
+  if (!(high > low)) { low -= 1; high += 1; }
+  return [low, high];
+}
+
+/* =======================================================================
+   4. 绘制
+   ======================================================================= */
+
+const canvas = document.getElementById("plot");
+const ctx = canvas.getContext("2d");
+const wrap = document.getElementById("plotwrap");
+const readout = document.getElementById("readout");
+const statusEl = document.getElementById("status");
+const fnInput = document.getElementById("fn");
+
+let expr = null;
+let errorMessage = "";
+let segments = [];
+let pointer = null;
+let dragging = false;
+let lastPoint = null;
+let cssW = 0, cssH = 0;
+
+function themeColors() {
+  const cs = getComputedStyle(document.documentElement);
+  const v = k => cs.getPropertyValue(k).trim();
+  return {
+    plotBg: v("--plot-bg"), grid: v("--grid"), axis: v("--axis"),
+    tick: v("--tick"), accent: v("--accent"), text3: v("--text-3")
+  };
+}
+
+function resizeCanvas() {
+  const rect = wrap.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  cssW = Math.max(1, rect.width);
+  cssH = Math.max(1, rect.height);
+  const w = Math.round(cssW * dpr), h = Math.round(cssH * dpr);
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width = w; canvas.height = h;
+  }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function draw() {
+  resizeCanvas();
+  const w = cssW, h = cssH;
+  const C = themeColors();
+
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = C.plotBg;
+  ctx.fillRect(0, 0, w, h);
+
+  const xStep = niceStep(vpWidth() / Math.max(3, Math.round(w / 80)));
+  const yStep = niceStep(vpHeight() / Math.max(3, Math.round(h / 58)));
+
+  const axisX = toPxX(0, w), axisY = toPxY(0, h);
+  const axisXVisible = axisX >= 0 && axisX <= w;
+  const axisYVisible = axisY >= 0 && axisY <= h;
+
+  // 网格
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = C.grid;
+  ctx.beginPath();
+  for (const value of ticks(vp.xMin, vp.xMax, xStep)) {
+    const px = Math.round(toPxX(value, w)) + 0.5;
+    if (px < 0 || px > w) continue;
+    ctx.moveTo(px, 0); ctx.lineTo(px, h);
+  }
+  for (const value of ticks(vp.yMin, vp.yMax, yStep)) {
+    const py = Math.round(toPxY(value, h)) + 0.5;
+    if (py < 0 || py > h) continue;
+    ctx.moveTo(0, py); ctx.lineTo(w, py);
+  }
+  ctx.stroke();
+
+  // 坐标轴
+  ctx.strokeStyle = C.axis;
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  if (axisXVisible) { const x = Math.round(axisX) + 0.5; ctx.moveTo(x, 0); ctx.lineTo(x, h); }
+  if (axisYVisible) { const y = Math.round(axisY) + 0.5; ctx.moveTo(0, y); ctx.lineTo(w, y); }
+  ctx.stroke();
+
+  // 刻度文字
+  ctx.fillStyle = C.tick;
+  ctx.font = "11px 'Segoe UI Variable Text','Segoe UI',system-ui,sans-serif";
+  ctx.textBaseline = "top";
+  ctx.textAlign = "center";
+
+  const labelTop = axisYVisible ? Math.min(axisY + 5, h - 17) : (axisY > h ? h - 17 : 4);
+  for (const value of ticks(vp.xMin, vp.xMax, xStep)) {
+    const px = toPxX(value, w);
+    if (px < 16 || px > w - 12) continue;
+    ctx.fillText(formatTick(value, xStep), px, labelTop);
+  }
+
+  const labelLeft = axisXVisible ? Math.min(axisX + 6, w - 44) : (axisX > w ? w - 46 : 5);
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  for (const value of ticks(vp.yMin, vp.yMax, yStep)) {
+    const py = toPxY(value, h);
+    if (py < 10 || py > h - 16) continue;
+    // 原点已经由 X 轴的 "0" 标出，这里跳过避免重叠
+    if (value === 0 && axisXVisible) continue;
+    ctx.fillText(formatTick(value, yStep), labelLeft, py);
+  }
+
+  // 曲线
+  ctx.strokeStyle = C.accent;
+  ctx.lineWidth = 2;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  for (const seg of segments) {
+    ctx.beginPath();
+    for (let i = 0; i < seg.length; i++) {
+      const px = toPxX(seg[i].x, w), py = toPxY(seg[i].y, h);
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+  }
+
+  // 十字光标
+  if (pointer && !dragging) {
+    ctx.save();
+    ctx.strokeStyle = C.text3;
+    ctx.globalAlpha = 0.55;
+    ctx.setLineDash([4, 4]);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(Math.round(pointer.x) + 0.5, 0);
+    ctx.lineTo(Math.round(pointer.x) + 0.5, h);
+    ctx.moveTo(0, Math.round(pointer.y) + 0.5);
+    ctx.lineTo(w, Math.round(pointer.y) + 0.5);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  updateReadout(w, h);
+}
+
+function updateReadout(w, h) {
+  if (!pointer || dragging) { readout.classList.remove("on"); return; }
+
+  const worldX = toWorldX(pointer.x, w);
+  const worldY = toWorldY(pointer.y, h);
+  let line2;
+  if (expr) {
+    const y = expr.eval(worldX);
+    line2 = isFinite(y) ? "f(x) = " + fmt(y) : "f(x) = 无定义";
+  } else {
+    line2 = "f(x) = —";
+  }
+
+  readout.textContent = "x = " + fmt(worldX) + "\n" + line2;
+
+  const pad = 16;
+  let left = pointer.x + pad;
+  let top = pointer.y + pad;
+  const rw = readout.offsetWidth, rh = readout.offsetHeight;
+  if (left + rw > w - 4) left = pointer.x - rw - pad;
+  if (top + rh > h - 4) top = pointer.y - rh - pad;
+  readout.style.left = Math.max(4, left) + "px";
+  readout.style.top = Math.max(4, top) + "px";
+  readout.classList.add("on");
+}
+
+function fmt(v) {
+  if (!isFinite(v)) return "—";
+  const abs = Math.abs(v);
+  if (abs !== 0 && (abs < 1e-4 || abs >= 1e6)) return v.toExponential(3);
+  return (Math.round(v * 1e4) / 1e4).toString();
+}
+
+/* =======================================================================
+   5. 交互与状态
+   ======================================================================= */
+
+function refresh(resample = true) {
+  if (resample) {
+    if (expr) {
+      resizeCanvas();
+      const count = Math.max(240, Math.min(4000, Math.round(cssW * 1.8)));
+      segments = sample(expr, count);
+    } else {
+      segments = [];
+    }
+  }
+  draw();
+  updateStatus();
+}
+
+function updateStatus() {
+  if (errorMessage) {
+    statusEl.textContent = errorMessage;
+    statusEl.classList.add("error");
+    return;
+  }
+  statusEl.classList.remove("error");
+  if (!expr) {
+    statusEl.textContent = "输入一个关于 x 的表达式";
+    return;
+  }
+  statusEl.textContent = `已绘制 · x ∈ [${fmt(vp.xMin)}, ${fmt(vp.xMax)}] · y ∈ [${fmt(vp.yMin)}, ${fmt(vp.yMax)}]`;
+}
+
+function setExpression(text) {
+  try {
+    expr = compile(text);
+    errorMessage = "";
+  } catch (e) {
+    expr = null;
+    errorMessage = e instanceof ExprError ? e.message : String(e);
+  }
+  segments = [];
+  refresh();
+}
+
+function fitView() {
+  if (expr) {
+    const range = estimateYRange(expr, 1200);
+    if (range) { vp.yMin = range[0]; vp.yMax = range[1]; }
+  } else {
+    vp.yMin = -6; vp.yMax = 6;
+  }
+  refresh(true);
+}
+
+function resetView() {
+  vp.xMin = -10; vp.xMax = 10; vp.yMin = -6; vp.yMax = 6;
+  if (expr) {
+    const range = estimateYRange(expr, 1200);
+    if (range) { vp.yMin = range[0]; vp.yMax = range[1]; }
+  }
+  refresh(true);
+}
+
+function zoomAt(factor, ax, ay) {
+  const nx1 = ax + (vp.xMin - ax) * factor;
+  const nx2 = ax + (vp.xMax - ax) * factor;
+  const ny1 = ay + (vp.yMin - ay) * factor;
+  const ny2 = ay + (vp.yMax - ay) * factor;
+  if (nx2 - nx1 < 1e-9 || ny2 - ny1 < 1e-9) return;
+  vp.xMin = nx1; vp.xMax = nx2; vp.yMin = ny1; vp.yMax = ny2;
+  refresh(true);
+}
+
+function localPoint(ev) {
+  const rect = canvas.getBoundingClientRect();
+  return { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
+}
+
+canvas.addEventListener("pointerdown", ev => {
+  if (ev.button !== 0) return;
+  dragging = true;
+  lastPoint = localPoint(ev);
+  pointer = lastPoint;
+  canvas.setPointerCapture(ev.pointerId);
+  readout.classList.remove("on");
+});
+
+canvas.addEventListener("pointermove", ev => {
+  const p = localPoint(ev);
+  pointer = p;
+  if (dragging && lastPoint) {
+    const dx = -(p.x - lastPoint.x) / cssW * vpWidth();
+    const dy = (p.y - lastPoint.y) / cssH * vpHeight();
+    vp.xMin += dx; vp.xMax += dx; vp.yMin += dy; vp.yMax += dy;
+    lastPoint = p;
+    refresh(true);
+    return;
+  }
+  draw();
+});
+
+canvas.addEventListener("pointerup", ev => {
+  dragging = false;
+  lastPoint = null;
+  try { canvas.releasePointerCapture(ev.pointerId); } catch (_) {}
+  draw();
+});
+
+canvas.addEventListener("pointerleave", () => {
+  if (dragging) return;
+  pointer = null;
+  readout.classList.remove("on");
+  draw();
+});
+
+canvas.addEventListener("pointercancel", () => { dragging = false; lastPoint = null; });
+
+canvas.addEventListener("wheel", ev => {
+  ev.preventDefault();
+  const p = localPoint(ev);
+  const factor = ev.deltaY < 0 ? 0.88 : 1 / 0.88;
+  zoomAt(factor, toWorldX(p.x, cssW), toWorldY(p.y, cssH));
+  pointer = p;
+}, { passive: false });
+
+canvas.addEventListener("dblclick", () => fitView());
+
+fnInput.addEventListener("input", () => setExpression(fnInput.value));
+
+document.getElementById("fitBtn").addEventListener("click", () => fitView());
+
+/* ---- 菜单 ---- */
+const flyout = document.getElementById("flyout");
+const moreBtn = document.getElementById("moreBtn");
+
+moreBtn.addEventListener("click", ev => {
+  ev.stopPropagation();
+  flyout.classList.toggle("open");
+});
+
+document.addEventListener("click", ev => {
+  if (!flyout.contains(ev.target)) flyout.classList.remove("open");
+});
+
+flyout.addEventListener("click", ev => {
+  const item = ev.target.closest(".mi");
+  if (!item) return;
+
+  if (item.dataset.ex) {
+    fnInput.value = item.dataset.ex;
+    setExpression(item.dataset.ex);
+    fitView();
+  } else if (item.dataset.act) {
+    const act = item.dataset.act;
+    if (act === "fit") fitView();
+    if (act === "reset") resetView();
+    if (act === "zin") zoomAt(0.8, (vp.xMin + vp.xMax) / 2, (vp.yMin + vp.yMax) / 2);
+    if (act === "zout") zoomAt(1.25, (vp.xMin + vp.xMax) / 2, (vp.yMin + vp.yMax) / 2);
+  }
+  flyout.classList.remove("open");
+});
+
+document.addEventListener("keydown", ev => {
+  if (!(ev.ctrlKey || ev.metaKey)) return;
+  const k = ev.key;
+  if (k === "+" || k === "=") { ev.preventDefault(); zoomAt(0.8, (vp.xMin + vp.xMax) / 2, (vp.yMin + vp.yMax) / 2); }
+  else if (k === "-") { ev.preventDefault(); zoomAt(1.25, (vp.xMin + vp.xMax) / 2, (vp.yMin + vp.yMax) / 2); }
+  else if (k.toLowerCase() === "r") { ev.preventDefault(); resetView(); }
+  else if (k.toLowerCase() === "f") { ev.preventDefault(); fitView(); }
+});
+
+/* ---- 主题 ---- */
+const themeBtn = document.getElementById("themeBtn");
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  themeBtn.textContent = theme === "dark" ? "☀" : "◐";
+  draw();
+}
+const prefersDark = window.matchMedia("(prefers-color-scheme: dark)");
+applyTheme(prefersDark.matches ? "dark" : "light");
+prefersDark.addEventListener("change", e => applyTheme(e.matches ? "dark" : "light"));
+themeBtn.addEventListener("click", () => {
+  applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+});
+
+/* ---- 启动 ---- */
+new ResizeObserver(() => { resizeCanvas(); refresh(true); }).observe(wrap);
+
+resizeCanvas();
+setExpression(fnInput.value);
+if (expr) {
+  const range = estimateYRange(expr, 1200);
+  if (range) { vp.yMin = range[0]; vp.yMax = range[1]; }
+  refresh(true);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="FunctionPlotter.WinUI.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="函数绘图器">
+
+    <Grid x:Name="RootGrid" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+        <Grid.KeyboardAccelerators>
+            <KeyboardAccelerator Key="Add" Modifiers="Control" Invoked="ZoomIn_Invoked" />
+            <KeyboardAccelerator Key="Subtract" Modifiers="Control" Invoked="ZoomOut_Invoked" />
+            <KeyboardAccelerator Key="R" Modifiers="Control" Invoked="Reset_Invoked" />
+            <KeyboardAccelerator Key="F" Modifiers="Control" Invoked="Fit_Invoked" />
+        </Grid.KeyboardAccelerators>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- 顶部：函数输入区 -->
+        <Grid Grid.Row="0" Padding="16,14,16,10" ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                Style="{StaticResource BodyStrongTextBlockStyle}"
+                Text="f(x) =" />
+
+            <TextBox
+                x:Name="FunctionBox"
+                Grid.Column="1"
+                VerticalAlignment="Center"
+                FontFamily="Consolas"
+                FontSize="15"
+                PlaceholderText="例如 sin(x)/x"
+                TextChanged="FunctionBox_TextChanged" />
+
+            <Button
+                Grid.Column="2"
+                VerticalAlignment="Center"
+                Click="Fit_Click"
+                Content="适配"
+                ToolTipService.ToolTip="根据当前 X 范围自动调整 Y 轴（画布内双击同效）" />
+
+            <Button
+                x:Name="MoreButton"
+                Grid.Column="3"
+                VerticalAlignment="Center"
+                ToolTipService.ToolTip="更多">
+                <Button.Content>
+                    <FontIcon FontSize="14" Glyph="&#xE712;" />
+                </Button.Content>
+                <Button.Flyout>
+                    <MenuFlyout Placement="BottomEdgeAlignedRight">
+                        <MenuFlyoutItem Click="ZoomIn_Click" Text="放大    Ctrl+加号" />
+                        <MenuFlyoutItem Click="ZoomOut_Click" Text="缩小    Ctrl+减号" />
+                        <MenuFlyoutItem Click="Reset_Click" Text="重置视图    Ctrl+R" />
+                        <MenuFlyoutItem Click="Fit_Click" Text="适配视图    Ctrl+F" />
+                        <MenuFlyoutSeparator />
+                        <MenuFlyoutSubItem Text="示例函数">
+                            <MenuFlyoutItem Click="Example_Click" Text="sin(x)/x" />
+                            <MenuFlyoutItem Click="Example_Click" Text="x^2 - 4" />
+                            <MenuFlyoutItem Click="Example_Click" Text="sin(x)cos(2x)" />
+                            <MenuFlyoutItem Click="Example_Click" Text="exp(-x^2)" />
+                            <MenuFlyoutItem Click="Example_Click" Text="tan(x)" />
+                            <MenuFlyoutItem Click="Example_Click" Text="1/x" />
+                            <MenuFlyoutItem Click="Example_Click" Text="sqrt(x)" />
+                            <MenuFlyoutItem Click="Example_Click" Text="abs(x) - 2" />
+                            <MenuFlyoutItem Click="Example_Click" Text="log(x)" />
+                            <MenuFlyoutItem Click="Example_Click" Text="x sin(1/x)" />
+                        </MenuFlyoutSubItem>
+                    </MenuFlyout>
+                </Button.Flyout>
+            </Button>
+        </Grid>
+
+        <!-- 中间：绘制区 -->
+        <Border
+            Grid.Row="1"
+            Margin="16,0,16,0"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="8">
+            <Grid x:Name="PlotHost" />
+        </Border>
+
+        <!-- 底部：状态栏 -->
+        <Grid Grid.Row="2" Padding="16,9,16,12" ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock
+                x:Name="StatusText"
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                FontSize="12"
+                TextTrimming="CharacterEllipsis" />
+
+            <TextBlock
+                Grid.Column="1"
+                VerticalAlignment="Center"
+                FontSize="12"
+                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                Text="滚轮缩放 · 拖动平移 · 双击适配" />
+        </Grid>
+    </Grid>
+</Window>
